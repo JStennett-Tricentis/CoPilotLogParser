@@ -1,0 +1,26 @@
+{
+  "name": "sap-log-parser",
+  "version": "1.0.0",
+  "description": "High-performance web-based parser for SAP test automation logs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch"
+  },
+  "keywords": ["sap", "log-parser", "test-automation", "svelte", "enterprise"],
+  "author": "Tricentis",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@streamparser/json-whatwg": "^0.0.22",
+    "@sveltejs/adapter-auto": "^6.0.1",
+    "@sveltejs/kit": "^2.25.2",
+    "svelte": "^5.36.14",
+    "vis-data": "^8.0.1",
+    "vis-timeline": "^8.1.2",
+    "vite": "^6.3.5"
+  }
+}
