@@ -5,6 +5,7 @@ A high-performance web-based parser for SAP test automation logs, built with Sve
 ## 🚀 Features
 
 ### Core Functionality
+
 - **Smart File Processing**: Automatic handling based on file size (<5MB direct, 5-50MB streaming)
 - **Real-time Filtering**: Session ID, step names, screen names, time ranges, and full-text search
 - **Multiple View Modes**: List view with rich cards and table view with virtual scrolling
@@ -12,6 +13,7 @@ A high-performance web-based parser for SAP test automation logs, built with Sve
 - **Export Capabilities**: JSON, CSV, Excel-compatible formats with summary reports
 
 ### SAP-Specific Features
+
 - **Test Step Analysis**: Automatic parsing of SAP test automation workflows
 - **Session Management**: Multi-session log support with visual session indicators
 - **Action Tracking**: Screenshot detection and visionscript command parsing
@@ -19,6 +21,7 @@ A high-performance web-based parser for SAP test automation logs, built with Sve
 - **Field Value Extraction**: Parse form data, table entries, and validation results
 
 ### Performance Optimizations
+
 - **Streaming JSON Parser**: Handle large files without memory exhaustion
 - **Web Workers**: Background processing prevents UI blocking
 - **Virtual Scrolling**: Display millions of entries without performance degradation
@@ -63,7 +66,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 1. **Drag & Drop**: Drop JSON files directly onto the upload area
 2. **File Browser**: Click the upload area to select files
-3. **Supported Formats**: 
+3. **Supported Formats**:
    - `agent_logs.json` (full execution logs)
    - `filtered_agent_logs.json` (condensed test steps)
 
@@ -86,18 +89,21 @@ Use the filter panel to narrow down log entries:
 ### Viewing Data
 
 **List View** (Default):
+
 - Rich card-based display
 - Shows timestamp, description, session info
 - Action summaries and step counts
 - Hover effects for easy selection
 
 **Table View**:
+
 - Tabular data with virtual scrolling
 - Sortable columns
 - Optimized for large datasets
 - Export-friendly format
 
 **Timeline View**:
+
 - Visual chronology of test execution
 - Zoom and pan controls
 - Color-coded by action type
@@ -115,6 +121,7 @@ Choose from multiple export formats:
 ## 📊 Log File Structure
 
 ### Full Logs (`agent_logs.json`)
+
 ```json
 {
   "20250723205312": {
@@ -131,6 +138,7 @@ Choose from multiple export formats:
 ```
 
 ### Filtered Logs (`filtered_agent_logs.json`)
+
 ```json
 {
   "test_steps": [
@@ -211,6 +219,7 @@ npm run build
 ### Deploy to Static Hosting
 
 The application builds to static files compatible with:
+
 - Vercel
 - Netlify
 - GitHub Pages
@@ -246,21 +255,25 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 ### Common Issues
 
 **Large files not loading**:
+
 - Ensure file is under 50MB for client-side processing
 - Check browser console for detailed error messages
 - Try using streaming mode by refreshing the page
 
 **Timeline not displaying**:
+
 - Verify log entries have valid timestamps
 - Check that timestamp format matches expected patterns
 - Ensure Vis-Timeline dependencies loaded correctly
 
 **Export failing**:
+
 - Check that filtered data is not empty
 - Verify browser allows file downloads
 - Try different export formats
 
 **Performance issues**:
+
 - Enable virtual scrolling for large datasets
 - Use table view instead of list view for better performance
 - Consider filtering data before viewing
@@ -272,10 +285,7 @@ Enable developer tools and check the console for detailed error messages and per
 ## 📞 Support
 
 For issues, feature requests, or questions:
+
 - Check existing [Issues](../issues)
 - Create a new issue with detailed description
 - Include browser version, file size, and error messages
-
----
-
-**Built with ❤️ for SAP test automation teams**
