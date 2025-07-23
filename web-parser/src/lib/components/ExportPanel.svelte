@@ -4,6 +4,7 @@
 	
 	export let data = [];
 	export let filteredData = [];
+	export let compact = false;
 	
 	const dispatch = createEventDispatcher();
 	
@@ -65,83 +66,99 @@
 	}
 </script>
 
-<div class="export-panel">
-	<h4>Export Data</h4>
-	
-	<div class="form-group">
-		<label for="exportFormat">Format</label>
-		<select id="exportFormat" bind:value={exportFormat}>
-			<option value="json">JSON</option>
-			<option value="csv">CSV</option>
-			<option value="excel">Excel (CSV)</option>
-			<option value="summary">Summary Report</option>
-		</select>
+{#if compact}
+	<div class="compact-export">
+		<button 
+			class="btn export-btn" 
+			on:click={handleExport}
+			disabled={isExporting || getDataCount() === 0}
+		>
+			{#if isExporting}
+				💾 Exporting...
+			{:else}
+				💾 Export JSON
+			{/if}
+		</button>
 	</div>
-
-	<div class="form-group">
-		<label for="exportScope">Data Scope</label>
-		<select id="exportScope" bind:value={exportScope}>
-			<option value="filtered">Filtered Results ({filteredData.length} entries)</option>
-			<option value="all">All Data ({data.length} entries)</option>
-		</select>
-	</div>
-
-	{#if exportFormat !== 'summary'}
+{:else}
+	<div class="export-panel">
+		<h4>Export Data</h4>
+		
 		<div class="form-group">
-			<label>
-				<input type="checkbox" bind:checked={includeRawData}>
-				Include raw data fields
-			</label>
+			<label for="exportFormat">Format</label>
+			<select id="exportFormat" bind:value={exportFormat}>
+				<option value="json">JSON</option>
+				<option value="csv">CSV</option>
+				<option value="excel">Excel (CSV)</option>
+				<option value="summary">Summary Report</option>
+			</select>
 		</div>
-	{/if}
 
-	<div class="export-info">
-		<small>
-			Will export {getDataCount()} entries as {exportFormat.toUpperCase()}
-		</small>
-	</div>
+		<div class="form-group">
+			<label for="exportScope">Data Scope</label>
+			<select id="exportScope" bind:value={exportScope}>
+				<option value="filtered">Filtered Results ({filteredData.length} entries)</option>
+				<option value="all">All Data ({data.length} entries)</option>
+			</select>
+		</div>
 
-	<button 
-		class="btn" 
-		on:click={handleExport}
-		disabled={isExporting || getDataCount() === 0}
-	>
-		{#if isExporting}
-			Exporting...
-		{:else}
-			Export {exportFormat.toUpperCase()}
+		{#if exportFormat !== 'summary'}
+			<div class="form-group">
+				<label>
+					<input type="checkbox" bind:checked={includeRawData}>
+					Include raw data fields
+				</label>
+			</div>
 		{/if}
-	</button>
 
-	{#if exportFormat === 'summary'}
-		<div class="export-note">
+		<div class="export-info">
 			<small>
-				<strong>Summary Report includes:</strong><br>
-				• Total entries and date range<br>
-				• Session count and action types<br>
-				• Test step statistics<br>
-				• Generated metadata
+				Will export {getDataCount()} entries as {exportFormat.toUpperCase()}
 			</small>
 		</div>
-	{:else if exportFormat === 'csv'}
-		<div class="export-note">
-			<small>
-				<strong>CSV Export notes:</strong><br>
-				• Complex objects will be flattened<br>
-				• Arrays converted to JSON strings<br>
-				• UTF-8 encoding with Excel compatibility
-			</small>
-		</div>
-	{:else if exportFormat === 'excel'}
-		<div class="export-note">
-			<small>
-				<strong>Excel Export:</strong><br>
-				Currently exports as CSV format.<br>
-				For full Excel support, SheetJS integration needed.
-			</small>
-		</div>
-	{/if}
-</div>
+
+		<button 
+			class="btn" 
+			on:click={handleExport}
+			disabled={isExporting || getDataCount() === 0}
+		>
+			{#if isExporting}
+				Exporting...
+			{:else}
+				Export {exportFormat.toUpperCase()}
+			{/if}
+		</button>
+
+		{#if exportFormat === 'summary'}
+			<div class="export-note">
+				<small>
+					<strong>Summary Report includes:</strong><br>
+					• Total entries and date range<br>
+					• Session count and action types<br>
+					• Test step statistics<br>
+					• Generated metadata
+				</small>
+			</div>
+		{:else if exportFormat === 'csv'}
+			<div class="export-note">
+				<small>
+					<strong>CSV Export notes:</strong><br>
+					• Complex objects will be flattened<br>
+					• Arrays converted to JSON strings<br>
+					• UTF-8 encoding with Excel compatibility
+				</small>
+			</div>
+		{:else if exportFormat === 'excel'}
+			<div class="export-note">
+				<small>
+					<strong>Excel Export:</strong><br>
+					Currently exports as CSV format.<br>
+					For full Excel support, SheetJS integration needed.
+				</small>
+			</div>
+		{/if}
+	</div>
+{/if}
 
 <style>
 	.export-panel {
@@ -181,5 +198,21 @@
 
 	label input[type="checkbox"] {
 		margin-right: 6px;
+	}
+
+	.compact-export {
+		display: flex;
+		align-items: center;
+	}
+
+	.export-btn {
+		background: var(--color-warning);
+		color: #333;
+		padding: 8px 12px;
+		font-size: 12px;
+	}
+
+	.export-btn:hover:not(:disabled) {
+		background: #e0a800;
 	}
 </style>
