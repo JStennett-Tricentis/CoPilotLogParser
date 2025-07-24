@@ -10,10 +10,10 @@
 
 	function handleFileSelect(event) {
 		const file = event.target.files[0];
-		if (file && file.type === 'application/json') {
+		if (file && (file.type === 'application/json' || file.type === 'application/zip' || file.name.endsWith('.zip'))) {
 			dispatch('fileselect', { file });
 		} else {
-			alert('Please select a JSON file');
+			alert('Please select a JSON or ZIP file');
 		}
 	}
 
@@ -22,10 +22,10 @@
 		dragover = false;
 		
 		const file = event.dataTransfer.files[0];
-		if (file && file.type === 'application/json') {
+		if (file && (file.type === 'application/json' || file.type === 'application/zip' || file.name.endsWith('.zip'))) {
 			dispatch('fileselect', { file });
 		} else {
-			alert('Please drop a JSON file');
+			alert('Please drop a JSON or ZIP file');
 		}
 	}
 
@@ -66,7 +66,7 @@
 			<div class="loading">Processing...</div>
 		{:else}
 			<div class="drop-text">
-				<strong>Drop JSON file here</strong><br>
+				<strong>Drop JSON or ZIP file here</strong><br>
 				or click to browse
 			</div>
 		{/if}
@@ -75,13 +75,13 @@
 	<input
 		bind:this={fileInput}
 		type="file"
-		accept=".json"
+		accept=".json,.zip"
 		on:change={handleFileSelect}
 		style="display: none;"
 	>
 	
 	<div class="file-info">
-		<small>Supports: agent_logs.json, filtered_agent_logs.json</small><br>
+		<small>Supports: JSON files (agent_logs.json, filtered_agent_logs.json) or ZIP files (diagnostics.zip with logs + screenshots)</small><br>
 		<small>Max recommended size: 50MB</small>
 	</div>
 </div>

@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { filteredLogs } from '$lib/stores/logStore.js';
+	import { filteredLogs, screenshots } from '$lib/stores/logStore.js';
 	import VirtualTable from './VirtualTable.svelte';
 	import { WorkstepParser } from '$lib/utils/workstepParser.js';
 	
@@ -158,6 +158,9 @@
 						<div class="log-header">
 							<div class="log-timestamp">
 								{formatTimestamp(entry.timestamp || entry.id)}
+								{#if $screenshots && $screenshots[entry.timestamp || entry.id]}
+									<span class="screenshot-indicator" title="Screenshot available">📸</span>
+								{/if}
 							</div>
 							{#if entry.session_id}
 								<div class="log-session">
@@ -314,5 +317,12 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.screenshot-indicator {
+		margin-left: 6px;
+		font-size: 12px;
+		opacity: 0.7;
+		cursor: help;
 	}
 </style>

@@ -1,6 +1,7 @@
 <script>
 	import { createEventDispatcher } from "svelte";
 	import { WorkstepParser } from "$lib/utils/workstepParser.js";
+	import { screenshots } from "$lib/stores/logStore.js";
 
 	export let entry = null;
 
@@ -18,6 +19,7 @@
 		? WorkstepParser.formatTableEntries(currentStep.tableEntries)
 		: [];
 	$: visionCommands = parsedEntry?.visionCommands || [];
+	$: currentScreenshot = entry && $screenshots && $screenshots[entry.timestamp || entry.id];
 
 	function formatTimestamp(timestamp) {
 		if (!timestamp) return "";
@@ -210,6 +212,24 @@
 						<p>{parsedEntry.currentAction.thoughts}</p>
 					</div>
 				{/if}
+			</div>
+		{/if}
+
+		<!-- Screenshot Display -->
+		{#if currentScreenshot}
+			<div class="screenshot-section">
+				<div class="section-header">
+					<h4>📸 Screen Capture</h4>
+					<span class="screenshot-timestamp">Timestamp: {entry.timestamp || entry.id}</span>
+				</div>
+				<div class="screenshot-container">
+					<img 
+						src={currentScreenshot} 
+						alt="Screen capture for {entry.timestamp || entry.id}"
+						class="screenshot-image"
+						loading="lazy"
+					/>
+				</div>
 			</div>
 		{/if}
 
@@ -835,5 +855,43 @@
 		padding: 60px 20px;
 		text-align: center;
 		color: #666;
+	}
+
+	.screenshot-section {
+		background: var(--color-bg-2);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 16px;
+		margin-bottom: 16px;
+	}
+
+	.screenshot-timestamp {
+		font-size: 12px;
+		color: #666;
+		background: var(--color-bg-1);
+		padding: 4px 8px;
+		border-radius: 4px;
+	}
+
+	.screenshot-container {
+		margin-top: 12px;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		overflow: hidden;
+		background: #fff;
+	}
+
+	.screenshot-image {
+		width: 100%;
+		height: auto;
+		display: block;
+		max-height: 600px;
+		object-fit: contain;
+		cursor: zoom-in;
+		transition: transform 0.2s ease;
+	}
+
+	.screenshot-image:hover {
+		transform: scale(1.02);
 	}
 </style>

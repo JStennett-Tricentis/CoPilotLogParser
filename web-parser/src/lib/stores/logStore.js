@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 
 export const rawLogs = writable(null);
+export const screenshots = writable({});
 export const filters = writable({
 	sessionId: '',
 	stepName: '',
@@ -69,9 +70,15 @@ export const filteredLogs = derived(
 );
 
 export const logStore = {
-	setLogs: (logs) => rawLogs.set(logs),
+	setLogs: (logs, screenshotMap = {}) => {
+		rawLogs.set(logs);
+		screenshots.set(screenshotMap);
+	},
 	applyFilters: (newFilters) => filters.update(current => ({ ...current, ...newFilters })),
-	clearLogs: () => rawLogs.set(null),
+	clearLogs: () => {
+		rawLogs.set(null);
+		screenshots.set({});
+	},
 	clearFilters: () => filters.set({
 		sessionId: '',
 		stepName: '',

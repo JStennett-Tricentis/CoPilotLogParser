@@ -1,4 +1,5 @@
 import { logStore } from '$lib/stores/logStore.js';
+import JSZip from 'jszip';
 
 export class FileProcessor {
 	constructor() {
@@ -11,12 +12,75 @@ export class FileProcessor {
 
 		console.log(`Processing file: ${file.name} (${this.formatFileSize(fileSize)})`);
 
+		// Check if it's a ZIP file
+		if (file.type === 'application/zip' || file.name.endsWith('.zip')) {
+			return this.processZipFile(file);
+		}
+
 		if (fileSizeMB < 5) {
 			return this.processSmallFile(file);
 		} else if (fileSizeMB < 50) {
 			return this.processLargeFile(file);
 		} else {
 			throw new Error('File too large. Files over 50MB require server-side processing.');
+		}
+	}
+
+	async processZipFile(file) {
+		try {
+			console.log('Processing ZIP file...');
+			const zip = new JSZip();
+			const zipData = await zip.loadAsync(file);
+			
+			// Look for agent logs JSON files
+			const logFiles = Object.keys(zipData.files).filter(name => 
+				name.includes('agent_logs.json') || name.includes('filtered_agent_logs.json')
+			);
+			
+			if (logFiles.length === 0) {
+				throw new Error('No agent log files found in ZIP');
+			}
+			
+			// Use the first found log file (prefer agent_logs.json over filtered)
+			const logFileName = logFiles.find(name => name.includes('agent_logs.json')) || logFiles[0];
+			const logFile = zipData.files[logFileName];
+			
+			console.log(`Found log file: ${logFileName}`);
+			
+			// Extract and parse the JSON
+			const jsonText = await logFile.async('text');
+			const data = JSON.parse(jsonText);
+			
+			// Extract screenshots and create a map
+			const screenshots = {};
+			const screenshotFiles = Object.keys(zipData.files).filter(name => 
+				name.includes('screenshots/') && (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg'))
+			);
+			
+			console.log(`Found ${screenshotFiles.length} screenshot files`);
+			
+			// Process screenshots
+			for (const screenshotPath of screenshotFiles) {
+				const file = zipData.files[screenshotPath];
+				const fileName = screenshotPath.split('/').pop().replace(/\.(png|jpg|jpeg)$/i, '');
+				
+				// Convert to blob URL for display
+				const blob = await file.async('blob');
+				const url = URL.createObjectURL(blob);
+				screenshots[fileName] = url;
+			}
+			
+			// Store both logs and screenshots
+			logStore.setLogs(data, screenshots);
+			
+			return { 
+				success: true, 
+				entries: this.countEntries(data),
+				screenshots: Object.keys(screenshots).length,
+				method: 'zip'
+			};
+		} catch (error) {
+			throw new Error(`Failed to process ZIP file: ${error.message}`);
 		}
 	}
 
