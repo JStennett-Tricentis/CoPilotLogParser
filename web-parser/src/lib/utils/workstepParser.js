@@ -8,11 +8,11 @@ export class WorkstepParser {
 	 */
 	static parseWorksteps(workstepsString) {
 		if (!workstepsString) return null;
-		
+
 		try {
 			// Handle string representation of dict/object
 			let cleanedString = workstepsString;
-			
+
 			// Convert Python-style dict to JSON
 			if (workstepsString.includes("'")) {
 				// More careful replacement to handle nested quotes
@@ -25,7 +25,7 @@ export class WorkstepParser {
 					.replace(/'/g, '"')
 					// Fix any double-double quotes that might have been created
 					.replace(/""/g, '"');
-				
+
 				// Additional cleanup for common Python dict patterns
 				cleanedString = cleanedString
 					// Fix cases where we have "text's" -> "text"s" -> should be "text's"
@@ -33,7 +33,7 @@ export class WorkstepParser {
 					// Fix apostrophes in contractions
 					.replace(/(\w)"(\w)/g, '$1\'$2');
 			}
-			
+
 			const parsed = JSON.parse(cleanedString);
 			return parsed;
 		} catch (error) {
@@ -41,18 +41,18 @@ export class WorkstepParser {
 			try {
 				// Use eval as last resort for Python dict literals (be careful!)
 				// Only if the string looks like a Python dict and doesn't contain suspicious code
-				if (workstepsString.trim().startsWith('{') && 
+				if (workstepsString.trim().startsWith('{') &&
 					workstepsString.trim().endsWith('}') &&
 					!workstepsString.includes('import') &&
 					!workstepsString.includes('exec') &&
 					!workstepsString.includes('eval')) {
-					
+
 					// Replace Python-style values with JavaScript equivalents
 					let pythonToJS = workstepsString
 						.replace(/True/g, 'true')
 						.replace(/False/g, 'false')
 						.replace(/None/g, 'null');
-					
+
 					// Use Function constructor instead of eval for better security
 					const parsed = new Function('return ' + pythonToJS)();
 					return parsed;
@@ -60,7 +60,7 @@ export class WorkstepParser {
 			} catch (evalError) {
 				console.warn('Failed to parse worksteps with alternative method:', evalError);
 			}
-			
+
 			console.warn('Failed to parse worksteps:', error);
 			return null;
 		}
@@ -71,14 +71,14 @@ export class WorkstepParser {
 	 */
 	static parseVisionscript(visionscript) {
 		if (!visionscript) return [];
-		
+
 		const lines = visionscript.trim().split('\n');
 		const commands = [];
-		
+
 		for (const line of lines) {
 			const trimmed = line.trim();
 			if (!trimmed) continue;
-			
+
 			// Parse different command types
 			if (trimmed.startsWith('WAIT')) {
 				const match = trimmed.match(/WAIT (\d+) SECONDS?/);
@@ -112,7 +112,7 @@ export class WorkstepParser {
 				});
 			}
 		}
-		
+
 		return commands;
 	}
 
@@ -129,11 +129,11 @@ export class WorkstepParser {
 			'{TAB}': 'Tab',
 			'{ESC}': 'Escape'
 		};
-		
+
 		if (keyMappings[text]) {
 			return `Press ${keyMappings[text]}`;
 		}
-		
+
 		// Regular text input
 		return `Type: "${text}"`;
 	}
@@ -143,7 +143,7 @@ export class WorkstepParser {
 	 */
 	static extractTestSteps(workstepsData) {
 		if (!workstepsData || !workstepsData.test_steps) return [];
-		
+
 		return workstepsData.test_steps.map(step => ({
 			stepNumber: step.step_number,
 			stepName: step.step_name,
@@ -157,34 +157,167 @@ export class WorkstepParser {
 	}
 
 	/**
+	 * Parse description field to extract clean action description
+	 */
+	static parseDescription(description) {
+		if (!description) return null;
+
+		const result = {
+			cleanDescription: '',
+			guidingWorksteps: '',
+			testData: '',
+			rawDescription: description
+		};
+
+		// Remove HTML-like tags and extract content
+		let cleanDesc = description;
+
+		// Extract guiding worksteps
+		const workstepsMatch = description.match(/<guiding_worksteps>(.*?)<\/guiding_worksteps>/s);
+		if (workstepsMatch) {
+			result.guidingWorksteps = workstepsMatch[1].trim();
+			cleanDesc = cleanDesc.replace(/<guiding_worksteps>.*?<\/guiding_worksteps>/s, '');
+		}
+
+		// Extract test data
+		const testDataMatch = description.match(/<test_data>(.*?)<\/test_data>/s);
+		if (testDataMatch) {
+			result.testData = testDataMatch[1].trim();
+			cleanDesc = cleanDesc.replace(/<test_data>.*?<\/test_data>/s, '');
+		}
+
+		// Clean up remaining content
+		cleanDesc = cleanDesc
+			.replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+			.replace(/\n\s*\n/g, '\n') // Remove extra line breaks
+			.trim();
+
+		result.cleanDescription = cleanDesc;
+
+		// If no clean description remains, try to extract from the step context
+		if (!result.cleanDescription && result.testData) {
+			// Try to extract step name from context
+			const stepMatch = result.testData.match(/'step_name':\s*'([^']+)'/);
+			if (stepMatch) {
+				result.cleanDescription = stepMatch[1];
+			}
+		}
+
+		return result;
+	}
+
+	/**
 	 * Parse instructions into structured rules
 	 */
 	static parseInstructions(instructions) {
 		if (!instructions) return null;
-		
+
 		const sections = {
+			summary: '',
 			confirmationRules: [],
 			promptFormat: '',
 			behaviorRules: []
 		};
-		
-		// Extract confirmation rules
+
+		// Create a summary of the key points
+		if (instructions.includes('requires_user_confirmation')) {
+			sections.summary = 'Agent follows confirmation rules for user interaction during test execution.';
+		}
+
+		// Extract confirmation rules for "true" cases
 		const confirmationTrue = instructions.match(/Set `requires_user_confirmation: true` when:(.*?)Set `requires_user_confirmation: false`/s);
 		if (confirmationTrue) {
 			const rules = confirmationTrue[1]
 				.split('\n-')
 				.map(rule => rule.trim().replace(/^-\s*/, ''))
-				.filter(rule => rule.length > 0);
-			sections.confirmationRules = rules;
+				.filter(rule => rule.length > 0 && rule.length < 200); // Skip overly long rules
+			sections.confirmationRules = rules.slice(0, 5); // Limit to top 5 rules
 		}
-		
+
 		// Extract prompt format
 		const promptMatch = instructions.match(/Prompt format:(.*?)Before ending:/s);
 		if (promptMatch) {
 			sections.promptFormat = promptMatch[1].trim();
 		}
-		
+
 		return sections;
+	}
+
+	/**
+	 * Extract current action context from entry
+	 */
+	static extractCurrentAction(entry) {
+		const action = {
+			description: '',
+			thoughts: entry.thoughts || '',
+			screenContext: '',
+			actionType: 'unknown',
+			details: []
+		};
+
+		// Parse description
+		if (entry.description) {
+			const parsedDesc = this.parseDescription(entry.description);
+			action.description = parsedDesc.cleanDescription;
+
+			// Extract more context if description is still empty or unclear
+			if (!action.description && entry.actions && entry.actions.length > 0) {
+				const primaryAction = entry.actions[0];
+				action.actionType = primaryAction.action;
+
+				// Create readable description based on action type
+				switch (primaryAction.action) {
+					case 'screenshot':
+						action.description = 'Taking screenshot of current screen';
+						break;
+					case 'search':
+						if (primaryAction.args && primaryAction.args.query) {
+							action.description = `Searching for: "${primaryAction.args.query}"`;
+						} else {
+							action.description = 'Performing search operation';
+						}
+						break;
+					case 'click':
+						action.description = 'Clicking on screen element';
+						break;
+					case 'type':
+						action.description = 'Typing input data';
+						break;
+					default:
+						action.description = `Executing ${primaryAction.action} action`;
+				}
+			}
+		}
+
+		// Extract screen context from observations
+		if (entry.observations && entry.observations.length > 0) {
+			const obs = entry.observations[0];
+			if (obs.window_selector) {
+				action.screenContext = obs.window_selector.replace(/\s*-\s*Google Chrome\*?$/, '');
+			}
+		}
+
+		// Add execution details
+		if (entry.observations && entry.observations.length > 0) {
+			const obs = entry.observations[0];
+			if (obs.result) {
+				action.details.push({
+					label: 'Result',
+					value: obs.result,
+					type: obs.successful ? 'success' : 'error'
+				});
+			}
+
+			if (obs.description && obs.description !== action.description) {
+				action.details.push({
+					label: 'Technical Description',
+					value: obs.description,
+					type: 'info'
+				});
+			}
+		}
+
+		return action;
 	}
 
 	/**
@@ -199,7 +332,9 @@ export class WorkstepParser {
 			stepInfo: null,
 			visionCommands: [],
 			executionResult: null,
-			workstepsData: null
+			workstepsData: null,
+			currentAction: null,
+			parsedInstructions: null
 		};
 
 		// Parse worksteps
@@ -222,11 +357,19 @@ export class WorkstepParser {
 			}
 		}
 
+		// Parse current action
+		summary.currentAction = this.extractCurrentAction(entry);
+
+		// Parse instructions
+		if (entry.instructions) {
+			summary.parsedInstructions = this.parseInstructions(entry.instructions);
+		}
+
 		// Extract current step info from worksteps
 		if (summary.workstepsData && summary.workstepsData.test_steps) {
 			// Try to match current step based on description
-			const currentStep = summary.workstepsData.test_steps.find(step => 
-				summary.description && summary.description.includes(step.step_name)
+			const currentStep = summary.workstepsData.test_steps.find(step =>
+				summary.currentAction.description && summary.currentAction.description.includes(step.step_name)
 			);
 			if (currentStep) {
 				summary.stepInfo = this.extractTestSteps(summary.workstepsData).find(s => s.stepNumber === currentStep.step_number);
@@ -241,7 +384,7 @@ export class WorkstepParser {
 	 */
 	static formatFieldValues(fieldValues) {
 		if (!fieldValues || Object.keys(fieldValues).length === 0) return [];
-		
+
 		return Object.entries(fieldValues).map(([field, value]) => ({
 			field,
 			value,
@@ -254,7 +397,7 @@ export class WorkstepParser {
 	 */
 	static formatTableEntries(tableEntries) {
 		if (!tableEntries || tableEntries.length === 0) return [];
-		
+
 		return tableEntries.map(table => ({
 			tableName: table.table_name,
 			entries: table.entries.map(entry => ({

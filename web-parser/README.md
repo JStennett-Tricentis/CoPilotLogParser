@@ -1,24 +1,36 @@
-# SAP Log Parser
+# CoPilot Log Parser - Web Interface
 
-A high-performance web-based parser for SAP test automation logs, built with SvelteKit and optimized for enterprise-scale log analysis.
+A sophisticated web-based tool for parsing and analyzing AI agent execution logs from automated testing systems. The application focuses on transforming raw log data into readable, structured formats with emphasis on **worksteps**, **visionscript**, and **agent behavior** analysis.
 
-## 🚀 Features
+## 🎯 Key Features
 
-### Core Functionality
+### **Workstep-Focused Parsing**
 
-- **Smart File Processing**: Automatic handling based on file size (<5MB direct, 5-50MB streaming)
-- **Real-time Filtering**: Session ID, step names, screen names, time ranges, and full-text search
-- **Multiple View Modes**: List view with rich cards and table view with virtual scrolling
-- **Timeline Visualization**: Interactive timeline showing test execution chronology
-- **Export Capabilities**: JSON, CSV, Excel-compatible formats with summary reports
+- **Structured Test Plans**: Parses Python dict worksteps into readable test step sequences
+- **Field Values Display**: Clean presentation of form data and table entries
+- **Step Progress Tracking**: Visual timeline showing current step in test execution
+- **Confirmation Requirements**: Highlights steps requiring user approval
 
-### SAP-Specific Features
+### **VisionScript Command Parsing**
 
-- **Test Step Analysis**: Automatic parsing of SAP test automation workflows
-- **Session Management**: Multi-session log support with visual session indicators
-- **Action Tracking**: Screenshot detection and visionscript command parsing
-- **Screen Navigation**: Track movement between SAP screens (Login, Home, Sales Order Creation)
-- **Field Value Extraction**: Parse form data, table entries, and validation results
+- **Automation Commands**: Converts raw visionscript to readable actions
+- **Command Categorization**: Wait, Type, Click actions with proper formatting
+- **Keyboard Shortcuts**: Translates key combinations (e.g., `{CTRL-SHIFT-F}` → "Press Ctrl+Shift+F")
+- **Copy Functionality**: Easy copying of automation scripts
+
+### **Current Action Analysis**
+
+- **Clean Descriptions**: Removes HTML tags and metadata noise
+- **Screen Context**: Shows current window/application context
+- **Execution Results**: Success/failure status with technical details
+- **Agent Thoughts**: Displays agent reasoning when available
+
+### **Modern UI/UX**
+
+- **Card-Based Design**: Clean, modern interface inspired by best practices
+- **Three View Modes**: Timeline, Log List, and detailed Worksteps view
+- **Tabbed Input**: Upload files or paste JSON data directly
+- **Responsive Layout**: Works on desktop and tablet devices
 
 ### Performance Optimizations
 

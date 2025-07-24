@@ -1,63 +1,69 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	import { WorkstepParser } from '$lib/utils/workstepParser.js';
-	
+	import { createEventDispatcher } from "svelte";
+	import { WorkstepParser } from "$lib/utils/workstepParser.js";
+
 	export let entry = null;
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	$: parsedEntry = entry ? WorkstepParser.createReadableSummary(entry) : null;
-	$: testSteps = parsedEntry?.workstepsData ? WorkstepParser.extractTestSteps(parsedEntry.workstepsData) : [];
+	$: testSteps = parsedEntry?.workstepsData
+		? WorkstepParser.extractTestSteps(parsedEntry.workstepsData)
+		: [];
 	$: currentStep = parsedEntry?.stepInfo;
-	$: fieldValues = currentStep ? WorkstepParser.formatFieldValues(currentStep.fieldValues) : [];
-	$: tableEntries = currentStep ? WorkstepParser.formatTableEntries(currentStep.tableEntries) : [];
+	$: fieldValues = currentStep
+		? WorkstepParser.formatFieldValues(currentStep.fieldValues)
+		: [];
+	$: tableEntries = currentStep
+		? WorkstepParser.formatTableEntries(currentStep.tableEntries)
+		: [];
 	$: visionCommands = parsedEntry?.visionCommands || [];
 
 	function formatTimestamp(timestamp) {
-		if (!timestamp) return '';
-		
-		if (typeof timestamp === 'string' && timestamp.length === 14) {
+		if (!timestamp) return "";
+
+		if (typeof timestamp === "string" && timestamp.length === 14) {
 			const year = timestamp.substring(0, 4);
 			const month = timestamp.substring(4, 6);
 			const day = timestamp.substring(6, 8);
 			const hour = timestamp.substring(8, 10);
 			const minute = timestamp.substring(10, 12);
 			const second = timestamp.substring(12, 14);
-			
+
 			return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 		}
-		
+
 		return timestamp;
 	}
 
 	function getStepStatus(step, currentStepNumber) {
-		if (!currentStepNumber) return 'pending';
-		if (step.stepNumber < currentStepNumber) return 'completed';
-		if (step.stepNumber === currentStepNumber) return 'current';
-		return 'pending';
+		if (!currentStepNumber) return "pending";
+		if (step.stepNumber < currentStepNumber) return "completed";
+		if (step.stepNumber === currentStepNumber) return "current";
+		return "pending";
 	}
 
 	function copyVisionScript() {
 		if (visionCommands.length === 0) return;
-		
+
 		const scriptText = visionCommands
-			.map(cmd => cmd.description)
-			.join('\n');
-		
+			.map((cmd) => cmd.description)
+			.join("\n");
+
 		navigator.clipboard.writeText(scriptText).then(() => {
-			dispatch('copy', { type: 'visionscript', content: scriptText });
+			dispatch("copy", { type: "visionscript", content: scriptText });
 		});
 	}
 
 	function copyFieldValues() {
 		if (fieldValues.length === 0) return;
-		
+
 		const fieldsText = fieldValues
-			.map(field => `${field.field}: ${field.displayValue}`)
-			.join('\n');
-		
+			.map((field) => `${field.field}: ${field.displayValue}`)
+			.join("\n");
+
 		navigator.clipboard.writeText(fieldsText).then(() => {
-			dispatch('copy', { type: 'fields', content: fieldsText });
+			dispatch("copy", { type: "fields", content: fieldsText });
 		});
 	}
 </script>
@@ -70,11 +76,20 @@
 				<div class="test-header">
 					<h2>{parsedEntry.workstepsData.name}</h2>
 					<div class="test-meta">
-						<span class="session-id">Session: {parsedEntry.sessionId?.substring(0, 8)}...</span>
-						<span class="timestamp">{formatTimestamp(parsedEntry.timestamp)}</span>
+						<span class="session-id"
+							>Session: {parsedEntry.sessionId?.substring(
+								0,
+								8,
+							)}...</span
+						>
+						<span class="timestamp"
+							>{formatTimestamp(parsedEntry.timestamp)}</span
+						>
 					</div>
 				</div>
-				<p class="test-description">{parsedEntry.workstepsData.description}</p>
+				<p class="test-description">
+					{parsedEntry.workstepsData.description}
+				</p>
 			</div>
 		{/if}
 
@@ -83,23 +98,29 @@
 			<div class="current-step">
 				<div class="step-header">
 					<h3>
-						<span class="step-number">Step {currentStep.stepNumber}</span>
+						<span class="step-number"
+							>Step {currentStep.stepNumber}</span
+						>
 						<span class="step-name">{currentStep.stepName}</span>
 					</h3>
 					<div class="step-meta">
-						<span class="screen-name">📱 {currentStep.screenName}</span>
+						<span class="screen-name"
+							>📱 {currentStep.screenName}</span
+						>
 						{#if currentStep.requiresConfirmation}
-							<span class="confirmation-required">⚠️ Requires Confirmation</span>
+							<span class="confirmation-required"
+								>⚠️ Requires Confirmation</span
+							>
 						{/if}
 					</div>
 				</div>
-				
+
 				<div class="step-content">
 					<div class="instruction">
 						<h4>📋 Instruction</h4>
 						<p>{currentStep.instruction}</p>
 					</div>
-					
+
 					<div class="expected-result">
 						<h4>✅ Expected Result</h4>
 						<p>{currentStep.expectedResult}</p>
@@ -109,13 +130,18 @@
 						<div class="field-values">
 							<div class="section-header">
 								<h4>📝 Field Values</h4>
-								<button class="copy-btn" on:click={copyFieldValues}>📋 Copy</button>
+								<button
+									class="copy-btn"
+									on:click={copyFieldValues}>📋 Copy</button
+								>
 							</div>
 							<div class="fields-grid">
 								{#each fieldValues as field}
 									<div class="field-item">
 										<label>{field.field}:</label>
-										<span class="field-value">{field.displayValue}</span>
+										<span class="field-value"
+											>{field.displayValue}</span
+										>
 									</div>
 								{/each}
 							</div>
@@ -130,10 +156,14 @@
 									<h5>{table.tableName}</h5>
 									{#each table.entries as entry}
 										<div class="table-row">
-											<span class="row-number">Row {entry.rowNumber}:</span>
+											<span class="row-number"
+												>Row {entry.rowNumber}:</span
+											>
 											<div class="row-fields">
 												{#each entry.fields as field}
-													<span class="table-field">{field.field}: {field.displayValue}</span>
+													<span class="table-field"
+														>{field.field}: {field.displayValue}</span
+													>
 												{/each}
 											</div>
 										</div>
@@ -147,14 +177,37 @@
 		{/if}
 
 		<!-- Current Action Description -->
-		{#if parsedEntry.description}
+		{#if parsedEntry.currentAction}
 			<div class="current-action">
-				<h4>🎯 Current Action</h4>
-				<p>{parsedEntry.description}</p>
-				{#if parsedEntry.thoughts}
+				<div class="action-header">
+					<h4>🎯 Current Action</h4>
+					{#if parsedEntry.currentAction.screenContext}
+						<span class="screen-context"
+							>📱 {parsedEntry.currentAction.screenContext}</span
+						>
+					{/if}
+				</div>
+
+				<div class="action-description">
+					<p>{parsedEntry.currentAction.description}</p>
+				</div>
+
+				{#if parsedEntry.currentAction.details && parsedEntry.currentAction.details.length > 0}
+					<div class="action-details">
+						{#each parsedEntry.currentAction.details as detail}
+							<div class="detail-item {detail.type}">
+								<span class="detail-label">{detail.label}:</span
+								>
+								<span class="detail-value">{detail.value}</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				{#if parsedEntry.currentAction.thoughts}
 					<div class="agent-thoughts">
 						<h5>💭 Agent Thoughts</h5>
-						<p>{parsedEntry.thoughts}</p>
+						<p>{parsedEntry.currentAction.thoughts}</p>
 					</div>
 				{/if}
 			</div>
@@ -165,14 +218,18 @@
 			<div class="vision-commands">
 				<div class="section-header">
 					<h4>🤖 Automation Commands</h4>
-					<button class="copy-btn" on:click={copyVisionScript}>📋 Copy Script</button>
+					<button class="copy-btn" on:click={copyVisionScript}
+						>📋 Copy Script</button
+					>
 				</div>
 				<div class="commands-list">
 					{#each visionCommands as command, index}
 						<div class="command-item {command.type}">
 							<span class="command-number">{index + 1}</span>
-							<span class="command-description">{command.description}</span>
-							{#if command.type === 'unknown'}
+							<span class="command-description"
+								>{command.description}</span
+							>
+							{#if command.type === "unknown"}
 								<code class="raw-command">{command.raw}</code>
 							{/if}
 						</div>
@@ -186,13 +243,18 @@
 			<div class="execution-result">
 				<h4>📊 Execution Result</h4>
 				<div class="result-details">
-					<div class="status {parsedEntry.executionResult.successful ? 'success' : 'error'}">
-						{parsedEntry.executionResult.successful ? '✅' : '❌'} 
+					<div
+						class="status {parsedEntry.executionResult.successful
+							? 'success'
+							: 'error'}"
+					>
+						{parsedEntry.executionResult.successful ? "✅" : "❌"}
 						{parsedEntry.executionResult.result}
 					</div>
 					{#if parsedEntry.executionResult.windowSelector}
 						<div class="window-info">
-							🪟 Window: {parsedEntry.executionResult.windowSelector}
+							🪟 Window: {parsedEntry.executionResult
+								.windowSelector}
 							{#if parsedEntry.executionResult.isNewWindow}
 								<span class="new-window-badge">New Window</span>
 							{/if}
@@ -202,17 +264,43 @@
 			</div>
 		{/if}
 
+		<!-- Agent Instructions Summary -->
+		{#if parsedEntry.parsedInstructions && parsedEntry.parsedInstructions.summary}
+			<div class="instructions-summary">
+				<h4>🤖 Agent Behavior</h4>
+				<p class="instructions-summary-text">
+					{parsedEntry.parsedInstructions.summary}
+				</p>
+
+				{#if parsedEntry.parsedInstructions.confirmationRules.length > 0}
+					<details class="confirmation-rules">
+						<summary>Key Confirmation Rules</summary>
+						<ul>
+							{#each parsedEntry.parsedInstructions.confirmationRules as rule}
+								<li>{rule}</li>
+							{/each}
+						</ul>
+					</details>
+				{/if}
+			</div>
+		{/if}
+
 		<!-- Test Steps Progress -->
 		{#if testSteps.length > 0}
 			<div class="test-progress">
 				<h4>📈 Test Progress ({testSteps.length} steps)</h4>
 				<div class="steps-timeline">
 					{#each testSteps as step}
-						<div class="timeline-step {getStepStatus(step, currentStep?.stepNumber)}">
+						<div
+							class="timeline-step {getStepStatus(
+								step,
+								currentStep?.stepNumber,
+							)}"
+						>
 							<div class="step-marker">
-								{#if getStepStatus(step, currentStep?.stepNumber) === 'completed'}
+								{#if getStepStatus(step, currentStep?.stepNumber) === "completed"}
 									✅
-								{:else if getStepStatus(step, currentStep?.stepNumber) === 'current'}
+								{:else if getStepStatus(step, currentStep?.stepNumber) === "current"}
 									🔄
 								{:else}
 									⏳
@@ -362,7 +450,8 @@
 		color: var(--color-theme-2);
 	}
 
-	.instruction p, .expected-result p {
+	.instruction p,
+	.expected-result p {
 		margin: 0;
 		line-height: 1.5;
 	}
@@ -465,6 +554,71 @@
 		border-radius: 6px;
 		margin-bottom: 20px;
 		border-left: 4px solid var(--color-warning);
+	}
+
+	.action-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 12px;
+	}
+
+	.screen-context {
+		background: var(--color-info);
+		color: white;
+		padding: 4px 8px;
+		border-radius: 4px;
+		font-size: 12px;
+		font-weight: 500;
+	}
+
+	.action-description p {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 500;
+		color: #333;
+	}
+
+	.action-details {
+		margin-top: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.detail-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		border-radius: 4px;
+		font-size: 12px;
+	}
+
+	.detail-item.success {
+		background: #d4edda;
+		border: 1px solid #c3e6cb;
+	}
+
+	.detail-item.error {
+		background: #f8d7da;
+		border: 1px solid #f5c6cb;
+	}
+
+	.detail-item.info {
+		background: #d1ecf1;
+		border: 1px solid #bee5eb;
+	}
+
+	.detail-label {
+		font-weight: 600;
+		color: #666;
+		min-width: 80px;
+	}
+
+	.detail-value {
+		font-family: var(--font-mono);
+		flex: 1;
 	}
 
 	.agent-thoughts {
@@ -587,6 +741,43 @@
 		border-radius: 2px;
 		font-size: 10px;
 		margin-left: 8px;
+	}
+
+	.instructions-summary {
+		background: #f8f9fa;
+		padding: 15px;
+		border-radius: 6px;
+		margin-bottom: 20px;
+		border-left: 4px solid var(--color-info);
+	}
+
+	.instructions-summary-text {
+		margin: 0 0 10px 0;
+		font-style: italic;
+		color: #666;
+	}
+
+	.confirmation-rules {
+		margin-top: 12px;
+	}
+
+	.confirmation-rules summary {
+		cursor: pointer;
+		font-weight: 500;
+		color: var(--color-info);
+		margin-bottom: 8px;
+	}
+
+	.confirmation-rules ul {
+		margin: 8px 0 0 20px;
+		padding: 0;
+	}
+
+	.confirmation-rules li {
+		margin-bottom: 6px;
+		font-size: 12px;
+		line-height: 1.4;
+		color: #666;
 	}
 
 	.test-progress {
