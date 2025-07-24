@@ -9,29 +9,29 @@
 
 	function handleKeyDown(event) {
 		if (event.ctrlKey || event.metaKey) return; // Don't interfere with browser shortcuts
-		
-		switch(event.key) {
-			case 'ArrowLeft':
+
+		switch (event.key) {
+			case "ArrowLeft":
 				event.preventDefault();
 				navigateToPrevEntry();
 				break;
-			case 'ArrowRight':
+			case "ArrowRight":
 				event.preventDefault();
 				navigateToNextEntry();
 				break;
-			case 'Escape':
+			case "Escape":
 				event.preventDefault();
-				dispatch('backtolist');
+				dispatch("backtolist");
 				break;
 		}
 	}
 
 	onMount(() => {
-		window.addEventListener('keydown', handleKeyDown);
+		window.addEventListener("keydown", handleKeyDown);
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('keydown', handleKeyDown);
+		window.removeEventListener("keydown", handleKeyDown);
 	});
 
 	$: parsedEntry = entry ? WorkstepParser.createReadableSummary(entry) : null;
@@ -46,12 +46,13 @@
 		? WorkstepParser.formatTableEntries(currentStep.tableEntries)
 		: [];
 	$: visionCommands = parsedEntry?.visionCommands || [];
-	$: currentScreenshot = entry && $screenshots && (
+	$: currentScreenshot =
+		entry &&
+		$screenshots &&
 		// For combined entries, use the original screenshot ID
-		entry.isCombinedEntry && entry.originalScreenshotId 
+		(entry.isCombinedEntry && entry.originalScreenshotId
 			? $screenshots[entry.originalScreenshotId]
-			: $screenshots[entry.timestamp || entry.id]
-	);
+			: $screenshots[entry.timestamp || entry.id]);
 
 	function formatTimestamp(timestamp) {
 		if (!timestamp) return "";
@@ -103,9 +104,12 @@
 
 	function navigateToStep(targetStep) {
 		// Find log entry that matches this step
-		const targetEntry = $filteredLogs.find(logEntry => {
+		const targetEntry = $filteredLogs.find((logEntry) => {
 			const parsed = WorkstepParser.createReadableSummary(logEntry);
-			return parsed.stepInfo && parsed.stepInfo.stepNumber === targetStep.stepNumber;
+			return (
+				parsed.stepInfo &&
+				parsed.stepInfo.stepNumber === targetStep.stepNumber
+			);
 		});
 
 		if (targetEntry) {
@@ -114,46 +118,51 @@
 	}
 
 	function navigateToNextEntry() {
-		const currentIndex = $filteredLogs.findIndex(logEntry => 
-			(logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)
+		const currentIndex = $filteredLogs.findIndex(
+			(logEntry) =>
+				(logEntry.timestamp || logEntry.id) ===
+				(entry.timestamp || entry.id),
 		);
-		
+
 		if (currentIndex !== -1 && currentIndex < $filteredLogs.length - 1) {
 			dispatch("entryselect", $filteredLogs[currentIndex + 1]);
 		}
 	}
 
 	function navigateToPrevEntry() {
-		const currentIndex = $filteredLogs.findIndex(logEntry => 
-			(logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)
+		const currentIndex = $filteredLogs.findIndex(
+			(logEntry) =>
+				(logEntry.timestamp || logEntry.id) ===
+				(entry.timestamp || entry.id),
 		);
-		
+
 		if (currentIndex > 0) {
 			dispatch("entryselect", $filteredLogs[currentIndex - 1]);
 		}
 	}
 
 	function getExecutionResultStatus(executionResult) {
-		if (!executionResult) return 'info';
-		
+		if (!executionResult) return "info";
+
 		if (executionResult.successful === true) {
-			return 'success';
+			return "success";
 		} else if (executionResult.successful === false) {
 			// Check if this is a user interaction result
-			const resultLower = executionResult.result?.toLowerCase() || '';
-			const isUserInteraction = resultLower.includes('ask_human') || 
-									 resultLower.includes('answer') ||
-									 resultLower.includes('user input') ||
-									 resultLower.includes('confirmation') ||
-									 resultLower.includes('user response') ||
-									 resultLower.includes('human input') ||
-									 resultLower.includes('waiting for user') ||
-									 resultLower.includes('user interaction');
-			
-			return isUserInteraction ? 'user' : 'error';
+			const resultLower = executionResult.result?.toLowerCase() || "";
+			const isUserInteraction =
+				resultLower.includes("ask_human") ||
+				resultLower.includes("answer") ||
+				resultLower.includes("user input") ||
+				resultLower.includes("confirmation") ||
+				resultLower.includes("user response") ||
+				resultLower.includes("human input") ||
+				resultLower.includes("waiting for user") ||
+				resultLower.includes("user interaction");
+
+			return isUserInteraction ? "user" : "error";
 		}
-		
-		return 'info';
+
+		return "info";
 	}
 </script>
 
@@ -163,19 +172,32 @@
 		<div class="navigation-controls">
 			<div class="nav-left">
 				<div class="nav-context">
-					Entry {$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) + 1} of {$filteredLogs.length}
+					Entry {$filteredLogs.findIndex(
+						(logEntry) =>
+							(logEntry.timestamp || logEntry.id) ===
+							(entry.timestamp || entry.id),
+					) + 1} of {$filteredLogs.length}
 				</div>
-				<button 
-					class="nav-btn" 
+				<button
+					class="nav-btn"
 					on:click={navigateToPrevEntry}
-					disabled={$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) === 0}
+					disabled={$filteredLogs.findIndex(
+						(logEntry) =>
+							(logEntry.timestamp || logEntry.id) ===
+							(entry.timestamp || entry.id),
+					) === 0}
 				>
 					← Previous Entry
 				</button>
-				<button 
-					class="nav-btn" 
+				<button
+					class="nav-btn"
 					on:click={navigateToNextEntry}
-					disabled={$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) === $filteredLogs.length - 1}
+					disabled={$filteredLogs.findIndex(
+						(logEntry) =>
+							(logEntry.timestamp || logEntry.id) ===
+							(entry.timestamp || entry.id),
+					) ===
+						$filteredLogs.length - 1}
 				>
 					Next Entry →
 				</button>
@@ -184,9 +206,9 @@
 				<div class="keyboard-hints">
 					<small>← → to navigate | ESC for list</small>
 				</div>
-				<button 
-					class="nav-btn secondary" 
-					on:click={() => dispatch('backtolist')}
+				<button
+					class="nav-btn secondary"
+					on:click={() => dispatch("backtolist")}
 				>
 					📋 Back to List
 				</button>
@@ -311,40 +333,50 @@
 					{/if}
 				</div>
 
-				<div class="action-description">
-					<p>{parsedEntry.currentAction.description}</p>
-					
-					<!-- Screenshot Info for Combined Entries -->
-					{#if entry.isCombinedEntry && entry.screenshotInfo}
-						<div class="screenshot-info">
-							<span class="screenshot-indicator">
-								📸 Screenshot captured at {formatTimestamp(entry.screenshotInfo.timestamp)}
-								{#if entry.screenshotInfo.window_selector}
-									on {entry.screenshotInfo.window_selector.replace(/\s*-\s*Google Chrome\*?$/, '')}
-								{/if}
-							</span>
+				<div class="action-content">
+					<div class="action-description">
+						<p>{parsedEntry.currentAction.description}</p>
+
+						<!-- Screenshot Info for Combined Entries -->
+						{#if entry.isCombinedEntry && entry.screenshotInfo}
+							<div class="screenshot-info">
+								<span class="screenshot-indicator">
+									📸 Screenshot captured at {formatTimestamp(
+										entry.screenshotInfo.timestamp,
+									)}
+									{#if entry.screenshotInfo.window_selector}
+										on {entry.screenshotInfo.window_selector.replace(
+											/\s*-\s*Google Chrome\*?$/,
+											"",
+										)}
+									{/if}
+								</span>
+							</div>
+						{/if}
+					</div>
+
+					{#if parsedEntry.currentAction.details && parsedEntry.currentAction.details.length > 0}
+						<div class="action-details">
+							{#each parsedEntry.currentAction.details as detail}
+								<div class="detail-item {detail.type}">
+									<span class="detail-label"
+										>{detail.label}:</span
+									>
+									<span class="detail-value"
+										>{detail.value}</span
+									>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if parsedEntry.currentAction.thoughts}
+						<div class="agent-thoughts">
+							<h5>💭 Agent Thoughts</h5>
+							<p>{parsedEntry.currentAction.thoughts}</p>
 						</div>
 					{/if}
 				</div>
-
-				{#if parsedEntry.currentAction.details && parsedEntry.currentAction.details.length > 0}
-					<div class="action-details">
-						{#each parsedEntry.currentAction.details as detail}
-							<div class="detail-item {detail.type}">
-								<span class="detail-label">{detail.label}:</span
-								>
-								<span class="detail-value">{detail.value}</span>
-							</div>
-						{/each}
-					</div>
-				{/if}
-
-				{#if parsedEntry.currentAction.thoughts}
-					<div class="agent-thoughts">
-						<h5>💭 Agent Thoughts</h5>
-						<p>{parsedEntry.currentAction.thoughts}</p>
-					</div>
-				{/if}
 			</div>
 		{/if}
 
@@ -354,13 +386,19 @@
 				<div class="section-header">
 					<h4>📸 Screen Capture</h4>
 					<span class="screenshot-timestamp">
-						Timestamp: {entry.isCombinedEntry && entry.originalScreenshotId ? entry.originalScreenshotId : (entry.timestamp || entry.id)}
+						Timestamp: {entry.isCombinedEntry &&
+						entry.originalScreenshotId
+							? entry.originalScreenshotId
+							: entry.timestamp || entry.id}
 					</span>
 				</div>
 				<div class="screenshot-container">
-					<img 
-						src={currentScreenshot} 
-						alt="Screen capture for {entry.isCombinedEntry && entry.originalScreenshotId ? entry.originalScreenshotId : (entry.timestamp || entry.id)}"
+					<img
+						src={currentScreenshot}
+						alt="Screen capture for {entry.isCombinedEntry &&
+						entry.originalScreenshotId
+							? entry.originalScreenshotId
+							: entry.timestamp || entry.id}"
 						class="screenshot-image"
 						loading="lazy"
 					/>
@@ -398,12 +436,16 @@
 			<div class="execution-result">
 				<h4>📊 Execution Result</h4>
 				<div class="result-details">
-					<div class="status {getExecutionResultStatus(parsedEntry.executionResult)}">
-						{#if getExecutionResultStatus(parsedEntry.executionResult) === 'success'}
+					<div
+						class="status {getExecutionResultStatus(
+							parsedEntry.executionResult,
+						)}"
+					>
+						{#if getExecutionResultStatus(parsedEntry.executionResult) === "success"}
 							✅
-						{:else if getExecutionResultStatus(parsedEntry.executionResult) === 'user'}
+						{:else if getExecutionResultStatus(parsedEntry.executionResult) === "user"}
 							👤
-						{:else if getExecutionResultStatus(parsedEntry.executionResult) === 'error'}
+						{:else if getExecutionResultStatus(parsedEntry.executionResult) === "error"}
 							❌
 						{:else}
 							ℹ️
@@ -447,7 +489,9 @@
 		<!-- Test Steps Progress -->
 		{#if testSteps.length > 0}
 			<div class="test-progress">
-				<h4>📈 Test Progress ({testSteps.length} steps) - Click to navigate</h4>
+				<h4>
+					📈 Test Progress ({testSteps.length} steps) - Click to navigate
+				</h4>
 				<div class="steps-timeline">
 					{#each testSteps as step}
 						<div
@@ -458,7 +502,8 @@
 							on:click={() => navigateToStep(step)}
 							role="button"
 							tabindex="0"
-							on:keydown={(e) => e.key === 'Enter' && navigateToStep(step)}
+							on:keydown={(e) =>
+								e.key === "Enter" && navigateToStep(step)}
 							title="Click to navigate to this step"
 						>
 							<div class="step-marker">
@@ -748,6 +793,7 @@
 		border-radius: 6px;
 		margin-bottom: 20px;
 		border-left: 4px solid var(--color-warning);
+		min-height: 60px; /* Ensure consistent minimum height */
 	}
 
 	.action-header {
@@ -755,6 +801,7 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 12px;
+		height: 20px;
 	}
 
 	.screen-context {
@@ -766,13 +813,19 @@
 		font-weight: 500;
 	}
 
+	.action-content {
+		display: flex;
+		flex-direction: column;
+		gap: 12px; /* Consistent spacing between all child elements */
+	}
+
 	.action-description p {
 		margin: 0;
 		font-size: 14px;
 		font-weight: 500;
 		color: #333;
 	}
-	
+
 	.screenshot-info {
 		margin-top: 8px;
 		padding: 6px 10px;
@@ -780,7 +833,7 @@
 		border-radius: 4px;
 		border-left: 3px solid var(--color-info, #2196f3);
 	}
-	
+
 	.screenshot-indicator {
 		font-size: 12px;
 		color: var(--color-info-dark, #1565c0);
@@ -788,7 +841,6 @@
 	}
 
 	.action-details {
-		margin-top: 12px;
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
@@ -817,14 +869,14 @@
 		background: #d1ecf1;
 		border: 1px solid #bee5eb;
 	}
-	
+
 	.detail-item.user {
 		background: #e7f3ff;
 		border: 1px solid #b3d9ff;
 		color: #004085;
 		position: relative;
 	}
-	
+
 	.detail-item.user::before {
 		content: "👤";
 		margin-right: 6px;
@@ -843,7 +895,6 @@
 	}
 
 	.agent-thoughts {
-		margin-top: 12px;
 		padding: 10px;
 		background: rgba(255, 193, 7, 0.1);
 		border-radius: 4px;
@@ -1132,6 +1183,7 @@
 		padding: 6px 10px;
 		border-radius: 4px;
 		border: 1px solid var(--color-border);
+		min-width: 110px;
 	}
 
 	.nav-btn {
