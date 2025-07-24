@@ -16,13 +16,13 @@ export class WorkstepParser {
 			// Check if string appears truncated (common patterns like ending with ******)
 			if (trimmed.includes('***') || (trimmed.endsWith('"') && trimmed.length < 100)) {
 				console.warn('Worksteps string appears truncated, skipping parsing:', trimmed.substring(0, 100) + '...');
-				return { truncated: true, preview: trimmed.substring(0, 200) };
+				return null;
 			}
 			
 			// Check if string doesn't have proper closing braces for large objects
 			if (trimmed.startsWith('{') && !trimmed.endsWith('}') && trimmed.length > 50) {
 				console.warn('Worksteps string has unmatched braces, skipping parsing:', trimmed.substring(0, 100) + '...');
-				return { truncated: true, preview: trimmed.substring(0, 200) };
+				return null;
 			}
 		}
 

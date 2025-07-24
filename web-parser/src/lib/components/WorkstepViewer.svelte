@@ -214,46 +214,6 @@
 					{parsedEntry.workstepsData.description}
 				</p>
 			</div>
-		{:else}
-			<div class="test-overview no-worksteps">
-				<div class="test-header">
-					<h2>📋 Log Entry Details</h2>
-					<div class="test-meta">
-						<span class="session-id"
-							>Session: {parsedEntry.sessionId?.substring(
-								0,
-								8,
-							)}...</span
-						>
-						<span class="timestamp"
-							>{formatTimestamp(parsedEntry.timestamp)}</span
-						>
-					</div>
-				</div>
-				
-				{#if parsedEntry.workstepsData?.truncated}
-					<div class="truncated-worksteps-notice">
-						<p>📝 <strong>Worksteps Data Truncated</strong></p>
-						<p>The worksteps data for this entry has been truncated or redacted (contains <code>******</code> characters).</p>
-						<details>
-							<summary>Preview of available data</summary>
-							<pre class="truncated-preview">{parsedEntry.workstepsData.preview}</pre>
-						</details>
-						<p><small>Note: Complete worksteps parsing requires unredacted data.</small></p>
-					</div>
-				{:else}
-					<div class="no-worksteps-notice">
-						<p>⚠️ No worksteps data available for this entry.</p>
-						<p>This might happen if:</p>
-						<ul>
-							<li>This is a screenshot-only or simple action entry</li>
-							<li>The worksteps field is missing from the log entry</li>
-							<li>The worksteps data failed to parse due to formatting issues</li>
-						</ul>
-						<p><small>Check the browser console for any parsing warnings.</small></p>
-					</div>
-				{/if}
-			</div>
 		{/if}
 
 		<!-- Current Step Details -->
@@ -611,56 +571,6 @@
 
 	.no-worksteps-notice li {
 		margin: 5px 0;
-	}
-
-	.truncated-worksteps-notice {
-		background: #e3f2fd;
-		border: 1px solid #2196f3;
-		border-radius: 8px;
-		padding: 20px;
-		margin-top: 15px;
-	}
-
-	.truncated-worksteps-notice p {
-		margin: 10px 0;
-		color: #1565c0;
-		line-height: 1.5;
-	}
-
-	.truncated-worksteps-notice p:first-child {
-		font-weight: 600;
-		margin-top: 0;
-	}
-
-	.truncated-worksteps-notice code {
-		background: rgba(33, 150, 243, 0.1);
-		padding: 2px 4px;
-		border-radius: 3px;
-		font-family: var(--font-mono);
-	}
-
-	.truncated-worksteps-notice details {
-		margin: 15px 0;
-	}
-
-	.truncated-worksteps-notice summary {
-		cursor: pointer;
-		font-weight: 500;
-		color: #1565c0;
-		margin-bottom: 10px;
-	}
-
-	.truncated-preview {
-		background: #f5f5f5;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		padding: 10px;
-		font-family: var(--font-mono);
-		font-size: 12px;
-		white-space: pre-wrap;
-		overflow-x: auto;
-		max-height: 200px;
-		overflow-y: auto;
 	}
 
 	.current-step {
