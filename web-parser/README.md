@@ -22,8 +22,15 @@ A sophisticated web-based tool for parsing and analyzing AI agent execution logs
 
 - **Clean Descriptions**: Removes HTML tags and metadata noise
 - **Screen Context**: Shows current window/application context
-- **Execution Results**: Success/failure status with technical details
+- **Smart Result Status**: Intelligent detection of user interactions vs errors
 - **Agent Thoughts**: Displays agent reasoning when available
+
+### **Screenshot Integration & Entry Grouping**
+
+- **Automatic Grouping**: Combines "Screenshot taken" entries with subsequent analysis
+- **Reduced Navigation**: Significantly fewer pages to browse through logs
+- **Screenshot Display**: Full screenshot debugging capability maintained
+- **Visual Indicators**: Clear icons showing combined entries (🔗) and screenshots (📸)
 
 ### **Modern UI/UX**
 
@@ -76,11 +83,12 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### Loading Log Files
 
-1. **Drag & Drop**: Drop JSON files directly onto the upload area
+1. **Drag & Drop**: Drop JSON or ZIP files directly onto the upload area
 2. **File Browser**: Click the upload area to select files
 3. **Supported Formats**:
    - `agent_logs.json` (full execution logs)
    - `filtered_agent_logs.json` (condensed test steps)
+   - `*.zip` (compressed logs with screenshots) - **Automatically extracts screenshots**
 
 ### File Size Handling
 
@@ -102,10 +110,18 @@ Use the filter panel to narrow down log entries:
 
 **List View** (Default):
 
-- Rich card-based display
-- Shows timestamp, description, session info
+- Rich card-based display with smart entry grouping
+- Screenshot indicators (📸) for entries with screen captures
+- Combined entry indicators (🔗) for grouped screenshot + analysis
 - Action summaries and step counts
 - Hover effects for easy selection
+
+**Result Status Indicators**:
+
+- ✅ **Success**: Completed operations (green)
+- 👤 **User Interaction**: Human input/confirmations (blue)
+- ❌ **Error**: Actual system failures (red)
+- ℹ️ **Info**: General information (light blue)
 
 **Table View**:
 

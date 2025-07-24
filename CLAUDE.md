@@ -146,10 +146,12 @@ The interface prioritizes **workstep readability**:
 ### **When Working with Logs**
 
 1. **Use WorkstepParser.createReadableSummary()** for all log entry processing
-2. **Focus on worksteps data** as the primary content
-3. **Parse descriptions** to remove HTML tags and extract clean actions
-4. **Display visionscript** in readable command format
-5. **Show current step context** prominently
+2. **Apply WorkstepParser.groupScreenshotEntries()** to reduce entry count automatically  
+3. **Focus on worksteps data** as the primary content
+4. **Parse descriptions** to remove HTML tags and extract clean actions
+5. **Display visionscript** in readable command format
+6. **Show current step context** prominently
+7. **Handle combined entries** - Check for `isCombinedEntry` flag and use `originalScreenshotId` for screenshots
 
 ### **UI Component Updates**
 
@@ -164,6 +166,8 @@ When extending the parser:
 
 - Add new parsing methods to `workstepParser.js`
 - Update `createReadableSummary()` to include new data
+- Consider if new entry types need grouping logic (see `groupScreenshotEntries()`)
+- Update result status detection in `extractCurrentAction()` for new result types
 - Test with sample data in `debug/partial-logs-examples/`
 - Ensure UI components can handle new parsed data structures
 
@@ -185,6 +189,10 @@ When extending the parser:
 - Agent instruction summarization
 - Three-view navigation (Timeline, List, Worksteps)
 - Export functionality with multiple formats
+- **Screenshot entry grouping** - Combines "Screenshot taken" with analysis entries
+- **Smart result status detection** - User interactions styled as blue, not red errors
+- **ZIP file support** - Automatic screenshot extraction from compressed uploads
+- **Visual indicators** - Clear icons for combined entries (🔗) and screenshots (📸)
 
 **🎯 Ready for:**
 

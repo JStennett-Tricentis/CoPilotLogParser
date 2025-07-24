@@ -409,3 +409,99 @@ static createReadableSummary(entry) {
 ```
 
 1. **Test with sample data** and update components to handle new data structure.
+
+## Entry Grouping Methods
+
+### `groupScreenshotEntries(logEntries)`
+
+**New feature** that reduces log entry count by combining "Screenshot taken" entries with their subsequent analysis entries.
+
+**Parameters:**
+
+- `logEntries` (Array): Array of log entries to process
+
+**Returns:**
+
+Array of entries with screenshot entries intelligently combined with analysis entries. Combined entries include:
+
+```javascript
+{
+  // All original analysis entry fields, plus:
+  isCombinedEntry: true,           // Flag indicating this is a combined entry
+  originalScreenshotId: string,    // Original screenshot timestamp/ID
+  screenshotInfo: {
+    timestamp: string,             // Screenshot capture timestamp
+    window_selector: string,       // Window context from screenshot
+    is_new_window: boolean        // Whether screenshot was in new window
+  }
+}
+```
+
+**Example:**
+
+```javascript
+const rawEntries = [
+  { timestamp: '001', actions: [{action: 'screenshot'}], observations: [{result: 'Screenshot taken'}] },
+  { timestamp: '002', thoughts: 'Analysis...', actions: [{action: 'search'}], observations: [...] }
+];
+
+const grouped = WorkstepParser.groupScreenshotEntries(rawEntries);
+// Returns 1 entry instead of 2, with screenshot info preserved
+console.log(grouped[0].isCombinedEntry);      // true
+console.log(grouped[0].originalScreenshotId); // '001'
+```
+
+### `isScreenshotEntry(entry)`
+
+Helper method to identify screenshot-only entries.
+
+**Parameters:**
+
+- `entry` (Object): Log entry to analyze
+
+**Returns:**
+
+- `boolean`: true if entry is primarily a screenshot capture
+
+### `isAnalysisEntry(entry)`
+
+Helper method to identify entries with meaningful analysis content.
+
+**Parameters:**
+
+- `entry` (Object): Log entry to analyze
+
+**Returns:**
+
+- `boolean`: true if entry contains thoughts, actions, or visionscript content
+
+### `combineScreenshotWithAnalysis(screenshotEntry, analysisEntry)`
+
+Merges screenshot metadata with analysis entry content.
+
+**Parameters:**
+
+- `screenshotEntry` (Object): Screenshot capture entry
+- `analysisEntry` (Object): Analysis/action entry
+
+**Returns:**
+
+- `Object`: Combined entry with preserved screenshot information
+
+## Enhanced Result Status Detection
+
+The parser now includes intelligent detection of user interaction results vs system errors:
+
+**User Interaction Patterns Detected:**
+- `ask_human` / `answer`
+- `user input` / `user response` 
+- `confirmation` / `human input`
+- `waiting for user` / `user interaction`
+
+**Result Types:**
+- `'success'`: Successful operations (✅ green)
+- `'user'`: User interactions (👤 blue)
+- `'error'`: System failures (❌ red)
+- `'info'`: General information (ℹ️ light blue)
+
+This ensures user confirmations and inputs are styled appropriately rather than being displayed as errors.
