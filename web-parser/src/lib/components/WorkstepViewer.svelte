@@ -1,11 +1,38 @@
 <script>
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount, onDestroy } from "svelte";
 	import { WorkstepParser } from "$lib/utils/workstepParser.js";
-	import { screenshots } from "$lib/stores/logStore.js";
+	import { screenshots, filteredLogs } from "$lib/stores/logStore.js";
 
 	export let entry = null;
 
 	const dispatch = createEventDispatcher();
+
+	function handleKeyDown(event) {
+		if (event.ctrlKey || event.metaKey) return; // Don't interfere with browser shortcuts
+		
+		switch(event.key) {
+			case 'ArrowLeft':
+				event.preventDefault();
+				navigateToPrevEntry();
+				break;
+			case 'ArrowRight':
+				event.preventDefault();
+				navigateToNextEntry();
+				break;
+			case 'Escape':
+				event.preventDefault();
+				dispatch('backtolist');
+				break;
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('keydown', handleKeyDown);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('keydown', handleKeyDown);
+	});
 
 	$: parsedEntry = entry ? WorkstepParser.createReadableSummary(entry) : null;
 	$: testSteps = parsedEntry?.workstepsData
@@ -68,10 +95,76 @@
 			dispatch("copy", { type: "fields", content: fieldsText });
 		});
 	}
+
+	function navigateToStep(targetStep) {
+		// Find log entry that matches this step
+		const targetEntry = $filteredLogs.find(logEntry => {
+			const parsed = WorkstepParser.createReadableSummary(logEntry);
+			return parsed.stepInfo && parsed.stepInfo.stepNumber === targetStep.stepNumber;
+		});
+
+		if (targetEntry) {
+			dispatch("entryselect", targetEntry);
+		}
+	}
+
+	function navigateToNextEntry() {
+		const currentIndex = $filteredLogs.findIndex(logEntry => 
+			(logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)
+		);
+		
+		if (currentIndex !== -1 && currentIndex < $filteredLogs.length - 1) {
+			dispatch("entryselect", $filteredLogs[currentIndex + 1]);
+		}
+	}
+
+	function navigateToPrevEntry() {
+		const currentIndex = $filteredLogs.findIndex(logEntry => 
+			(logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)
+		);
+		
+		if (currentIndex > 0) {
+			dispatch("entryselect", $filteredLogs[currentIndex - 1]);
+		}
+	}
 </script>
 
 {#if parsedEntry}
 	<div class="workstep-viewer">
+		<!-- Navigation Controls -->
+		<div class="navigation-controls">
+			<div class="nav-left">
+				<div class="nav-context">
+					Entry {$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) + 1} of {$filteredLogs.length}
+				</div>
+				<button 
+					class="nav-btn" 
+					on:click={navigateToPrevEntry}
+					disabled={$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) === 0}
+				>
+					← Previous Entry
+				</button>
+				<button 
+					class="nav-btn" 
+					on:click={navigateToNextEntry}
+					disabled={$filteredLogs.findIndex(logEntry => (logEntry.timestamp || logEntry.id) === (entry.timestamp || entry.id)) === $filteredLogs.length - 1}
+				>
+					Next Entry →
+				</button>
+			</div>
+			<div class="nav-right">
+				<div class="keyboard-hints">
+					<small>← → to navigate | ESC for list</small>
+				</div>
+				<button 
+					class="nav-btn secondary" 
+					on:click={() => dispatch('backtolist')}
+				>
+					📋 Back to List
+				</button>
+			</div>
+		</div>
+
 		<!-- Test Overview -->
 		{#if parsedEntry.workstepsData}
 			<div class="test-overview">
@@ -308,14 +401,19 @@
 		<!-- Test Steps Progress -->
 		{#if testSteps.length > 0}
 			<div class="test-progress">
-				<h4>📈 Test Progress ({testSteps.length} steps)</h4>
+				<h4>📈 Test Progress ({testSteps.length} steps) - Click to navigate</h4>
 				<div class="steps-timeline">
 					{#each testSteps as step}
 						<div
 							class="timeline-step {getStepStatus(
 								step,
 								currentStep?.stepNumber,
-							)}"
+							)} clickable"
+							on:click={() => navigateToStep(step)}
+							role="button"
+							tabindex="0"
+							on:keydown={(e) => e.key === 'Enter' && navigateToStep(step)}
+							title="Click to navigate to this step"
 						>
 							<div class="step-marker">
 								{#if getStepStatus(step, currentStep?.stepNumber) === "completed"}
@@ -332,6 +430,7 @@
 								</div>
 								<div class="step-screen">{step.screenName}</div>
 							</div>
+							<div class="step-nav-indicator">→</div>
 						</div>
 					{/each}
 				</div>
@@ -893,5 +992,102 @@
 
 	.screenshot-image:hover {
 		transform: scale(1.02);
+	}
+
+	.navigation-controls {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+		padding: 12px 16px;
+		background: var(--color-bg-1);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+	}
+
+	.nav-left {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+	}
+
+	.nav-context {
+		font-size: 13px;
+		color: #666;
+		background: var(--color-bg-2);
+		padding: 6px 10px;
+		border-radius: 4px;
+		border: 1px solid var(--color-border);
+	}
+
+	.nav-btn {
+		padding: 8px 16px;
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		background: var(--color-bg-2);
+		color: var(--color-text);
+		cursor: pointer;
+		font-size: 14px;
+		transition: all 0.2s ease;
+	}
+
+	.nav-btn:hover:not(:disabled) {
+		background: var(--color-theme-1);
+		color: white;
+		border-color: var(--color-theme-1);
+	}
+
+	.nav-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.nav-btn.secondary {
+		background: transparent;
+		color: var(--color-theme-1);
+		border-color: var(--color-theme-1);
+	}
+
+	.nav-btn.secondary:hover {
+		background: var(--color-theme-1);
+		color: white;
+	}
+
+	.nav-right {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.keyboard-hints {
+		font-size: 11px;
+		color: #888;
+		font-style: italic;
+	}
+
+	.timeline-step.clickable {
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+	}
+
+	.timeline-step.clickable:hover {
+		background: var(--color-bg-1);
+		transform: translateX(4px);
+	}
+
+	.timeline-step.clickable .step-nav-indicator {
+		opacity: 0;
+		transition: opacity 0.2s ease;
+		position: absolute;
+		right: 12px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--color-theme-1);
+		font-weight: bold;
+	}
+
+	.timeline-step.clickable:hover .step-nav-indicator {
+		opacity: 1;
 	}
 </style>

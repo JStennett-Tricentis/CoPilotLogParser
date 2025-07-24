@@ -36,6 +36,11 @@
 		currentView = 'worksteps';
 	}
 
+	function handleBackToList() {
+		currentView = 'list';
+		selectedEntry = null;
+	}
+
 	function handleFilter(event) {
 		const { detail: filters } = event;
 		logStore.applyFilters(filters);
@@ -198,6 +203,8 @@
 							<WorkstepViewer 
 								entry={selectedEntry}
 								on:copy={(e) => console.log('Copied:', e.detail)}
+								on:entryselect={handleEntrySelect}
+								on:backtolist={handleBackToList}
 							/>
 						</div>
 					{/if}
