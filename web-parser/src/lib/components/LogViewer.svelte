@@ -39,10 +39,60 @@
 			return `Step ${parsedEntry.stepInfo.stepNumber}: ${parsedEntry.stepInfo.stepName}`;
 		}
 		
+		// Extract meaningful action description from current action
+		if (parsedEntry.currentAction && parsedEntry.currentAction.description) {
+			const actionDesc = parsedEntry.currentAction.description;
+			if (actionDesc && actionDesc !== 'Taking screenshot of current screen') {
+				return actionDesc.length > 80 ? actionDesc.substring(0, 80) + '...' : actionDesc;
+			}
+		}
+		
+		// Try to extract screen name and action from observations
+		if (entry.observations && entry.observations.length > 0) {
+			const obs = entry.observations[0];
+			if (obs.description && obs.description.length < 100) {
+				return obs.description;
+			}
+		}
+		
+		// Try to get action type and context
+		if (entry.actions && entry.actions.length > 0) {
+			const action = entry.actions[0];
+			const actionType = action.action;
+			
+			// Get window context for better naming
+			let context = '';
+			if (entry.observations && entry.observations[0] && entry.observations[0].window_selector) {
+				context = entry.observations[0].window_selector.replace(/\s*-\s*Google Chrome\*?$/, '');
+			}
+			
+			switch (actionType) {
+				case 'screenshot':
+					return context ? `Screenshot: ${context}` : 'Taking Screenshot';
+				case 'search':
+					if (action.args && action.args.query) {
+						return `Search: "${action.args.query}"`;
+					}
+					return 'Search Action';
+				case 'click':
+					return context ? `Click on ${context}` : 'Click Action';
+				case 'type':
+					return context ? `Type on ${context}` : 'Type Action';
+				default:
+					return context ? `${actionType} on ${context}` : `${actionType} Action`;
+			}
+		}
+		
+		// Fallback to cleaned description
 		if (entry.description) {
-			// Truncate long descriptions
-			const desc = entry.description.replace(/<[^>]*>/g, '').trim();
-			return desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
+			let desc = entry.description.replace(/<[^>]*>/g, '').trim();
+			// Remove common verbose patterns
+			desc = desc.replace(/^Before any action.*?mandatory\.\*\*/s, '').trim();
+			desc = desc.replace(/^Prompt format:.*$/m, '').trim();
+			
+			if (desc.length > 0 && desc.length < 100) {
+				return desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
+			}
 		}
 		
 		return 'Log Entry';
@@ -158,8 +208,14 @@
 						<div class="log-header">
 							<div class="log-timestamp">
 								{formatTimestamp(entry.timestamp || entry.id)}
-								{#if $screenshots && $screenshots[entry.timestamp || entry.id]}
+								{#if $screenshots && (
+									$screenshots[entry.timestamp || entry.id] || 
+									(entry.isCombinedEntry && entry.originalScreenshotId && $screenshots[entry.originalScreenshotId])
+								)}
 									<span class="screenshot-indicator" title="Screenshot available">📸</span>
+								{/if}
+								{#if entry.isCombinedEntry}
+									<span class="combined-indicator" title="Combined screenshot + analysis entry">🔗</span>
 								{/if}
 							</div>
 							{#if entry.session_id}
@@ -324,5 +380,13 @@
 		font-size: 12px;
 		opacity: 0.7;
 		cursor: help;
+	}
+	
+	.combined-indicator {
+		margin-left: 6px;
+		font-size: 12px;
+		opacity: 0.7;
+		cursor: help;
+		color: var(--color-success, #28a745);
 	}
 </style>

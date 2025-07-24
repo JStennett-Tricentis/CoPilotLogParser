@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { WorkstepParser } from '$lib/utils/workstepParser.js';
 
 export const rawLogs = writable(null);
 export const screenshots = writable({});
@@ -13,21 +14,26 @@ export const filters = writable({
 export const parsedLogs = derived(rawLogs, ($rawLogs) => {
 	if (!$rawLogs) return [];
 	
+	let entries = [];
+	
 	// Parse different log formats
 	if (Array.isArray($rawLogs)) {
-		return $rawLogs;
-	}
-	
-	// Handle full logs format (timestamp keys)
-	if (typeof $rawLogs === 'object' && !Array.isArray($rawLogs)) {
-		return Object.entries($rawLogs).map(([timestamp, entry]) => ({
+		entries = $rawLogs;
+	} else if (typeof $rawLogs === 'object' && !Array.isArray($rawLogs)) {
+		// Handle full logs format (timestamp keys)
+		entries = Object.entries($rawLogs).map(([timestamp, entry]) => ({
 			timestamp,
 			...entry,
 			id: timestamp
 		}));
 	}
 	
-	return [];
+	// Apply screenshot grouping to reduce number of entries
+	if (entries.length > 0) {
+		entries = WorkstepParser.groupScreenshotEntries(entries);
+	}
+	
+	return entries;
 });
 
 export const filteredLogs = derived(

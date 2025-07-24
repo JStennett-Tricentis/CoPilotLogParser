@@ -9,6 +9,23 @@ export class WorkstepParser {
 	static parseWorksteps(workstepsString) {
 		if (!workstepsString) return null;
 
+		// Check for truncated or malformed strings
+		if (typeof workstepsString === 'string') {
+			const trimmed = workstepsString.trim();
+			
+			// Check if string appears truncated (common patterns like ending with ******)
+			if (trimmed.includes('***') || (trimmed.endsWith('"') && trimmed.length < 100)) {
+				console.warn('Worksteps string appears truncated, skipping parsing:', trimmed.substring(0, 100) + '...');
+				return null;
+			}
+			
+			// Check if string doesn't have proper closing braces for large objects
+			if (trimmed.startsWith('{') && !trimmed.endsWith('}') && trimmed.length > 50) {
+				console.warn('Worksteps string has unmatched braces, skipping parsing:', trimmed.substring(0, 100) + '...');
+				return null;
+			}
+		}
+
 		try {
 			// Handle string representation of dict/object
 			let cleanedString = workstepsString;
@@ -20,18 +37,11 @@ export class WorkstepParser {
 					// First handle boolean and null values
 					.replace(/True/g, 'true')
 					.replace(/False/g, 'false')
-					.replace(/None/g, 'null')
-					// Handle single quotes but preserve escaped quotes and quotes within strings
-					.replace(/'/g, '"')
-					// Fix any double-double quotes that might have been created
-					.replace(/""/g, '"');
+					.replace(/None/g, 'null');
 
-				// Additional cleanup for common Python dict patterns
-				cleanedString = cleanedString
-					// Fix cases where we have "text's" -> "text"s" -> should be "text's"
-					.replace(/"([^"]*)"s"/g, '"$1\'s"')
-					// Fix apostrophes in contractions
-					.replace(/(\w)"(\w)/g, '$1\'$2');
+				// Replace single quotes with double quotes, but be careful with apostrophes
+				// This is a simplified approach - for complex cases we'll use the Function constructor fallback
+				cleanedString = cleanedString.replace(/'/g, '"');
 			}
 
 			const parsed = JSON.parse(cleanedString);
@@ -301,10 +311,31 @@ export class WorkstepParser {
 		if (entry.observations && entry.observations.length > 0) {
 			const obs = entry.observations[0];
 			if (obs.result) {
+				// Determine result type - user interactions should not be treated as errors
+				let resultType = 'info'; // default to neutral
+				
+				if (obs.successful === true) {
+					resultType = 'success';
+				} else if (obs.successful === false) {
+					// Check if this is a user interaction result
+					const resultLower = obs.result.toLowerCase();
+					const isUserInteraction = resultLower.includes('ask_human') || 
+											 resultLower.includes('answer') ||
+											 resultLower.includes('user input') ||
+											 resultLower.includes('confirmation') ||
+											 resultLower.includes('user response') ||
+											 resultLower.includes('human input') ||
+											 resultLower.includes('waiting for user') ||
+											 resultLower.includes('user interaction');
+					
+					// User interactions are neutral, not errors
+					resultType = isUserInteraction ? 'user' : 'error';
+				}
+				
 				action.details.push({
 					label: 'Result',
 					value: obs.result,
-					type: obs.successful ? 'success' : 'error'
+					type: resultType
 				});
 			}
 
@@ -405,5 +436,113 @@ export class WorkstepParser {
 				fields: this.formatFieldValues(entry.field_values)
 			}))
 		}));
+	}
+
+	/**
+	 * Group screenshot entries with their following analysis entries
+	 * This reduces the number of entries by combining "Screenshot taken" with subsequent actions
+	 */
+	static groupScreenshotEntries(logEntries) {
+		if (!Array.isArray(logEntries) || logEntries.length === 0) return logEntries;
+
+		const grouped = [];
+		let i = 0;
+
+		while (i < logEntries.length) {
+			const currentEntry = logEntries[i];
+			
+			// Check if this is a screenshot entry
+			const isScreenshotEntry = this.isScreenshotEntry(currentEntry);
+			
+			if (isScreenshotEntry && i + 1 < logEntries.length) {
+				const nextEntry = logEntries[i + 1];
+				
+				// Check if the next entry is an analysis/action entry (has meaningful content)
+				if (this.isAnalysisEntry(nextEntry)) {
+					// Combine the screenshot info with the analysis entry
+					const combinedEntry = this.combineScreenshotWithAnalysis(currentEntry, nextEntry);
+					grouped.push(combinedEntry);
+					i += 2; // Skip both entries since we combined them
+					continue;
+				}
+			}
+			
+			// If not a screenshot+analysis pair, just add the current entry
+			grouped.push(currentEntry);
+			i++;
+		}
+
+		return grouped;
+	}
+
+	/**
+	 * Check if an entry is a screenshot entry
+	 */
+	static isScreenshotEntry(entry) {
+		// Check if the primary action is screenshot
+		if (entry.actions && entry.actions.length > 0) {
+			const primaryAction = entry.actions[0];
+			if (primaryAction.action === 'screenshot') {
+				return true;
+			}
+		}
+
+		// Check if observations indicate screenshot was taken
+		if (entry.observations && entry.observations.length > 0) {
+			const observation = entry.observations[0];
+			if (observation.result === 'Screenshot taken') {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if an entry is an analysis/action entry (has meaningful content to combine with screenshot)
+	 */
+	static isAnalysisEntry(entry) {
+		// Must have meaningful thoughts, description, or actions beyond just screenshot
+		const hasThoughts = entry.thoughts && entry.thoughts.trim().length > 0;
+		const hasDescription = entry.description && entry.description.trim().length > 0;
+		
+		// Check if actions are meaningful (not just screenshots)
+		const hasMeaningfulActions = entry.actions && entry.actions.length > 0 && 
+			entry.actions.some(action => action.action !== 'screenshot');
+
+		// Check if observations have visionscript or meaningful results
+		const hasVisionScript = entry.observations && entry.observations.length > 0 &&
+			entry.observations.some(obs => obs.visionscript && obs.visionscript.trim().length > 0);
+
+		return hasThoughts || hasDescription || hasMeaningfulActions || hasVisionScript;
+	}
+
+	/**
+	 * Combine a screenshot entry with its following analysis entry
+	 */
+	static combineScreenshotWithAnalysis(screenshotEntry, analysisEntry) {
+		// Start with the analysis entry as the base (it has the meaningful content)
+		const combined = { ...analysisEntry };
+
+		// Add screenshot information
+		combined.screenshotInfo = {
+			timestamp: screenshotEntry.timestamp || screenshotEntry.id,
+			window_selector: screenshotEntry.observations?.[0]?.window_selector,
+			is_new_window: screenshotEntry.observations?.[0]?.is_new_window
+		};
+
+		// If the analysis entry doesn't have meaningful window context, use screenshot's
+		if (!combined.observations?.[0]?.window_selector && screenshotEntry.observations?.[0]?.window_selector) {
+			if (!combined.observations) combined.observations = [];
+			if (!combined.observations[0]) combined.observations[0] = {};
+			combined.observations[0].window_selector = screenshotEntry.observations[0].window_selector;
+			combined.observations[0].is_new_window = screenshotEntry.observations[0].is_new_window;
+		}
+
+		// Mark this as a combined entry for UI purposes
+		combined.isCombinedEntry = true;
+		combined.originalScreenshotId = screenshotEntry.timestamp || screenshotEntry.id;
+
+		return combined;
 	}
 }

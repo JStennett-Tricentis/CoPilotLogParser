@@ -46,7 +46,12 @@
 		? WorkstepParser.formatTableEntries(currentStep.tableEntries)
 		: [];
 	$: visionCommands = parsedEntry?.visionCommands || [];
-	$: currentScreenshot = entry && $screenshots && $screenshots[entry.timestamp || entry.id];
+	$: currentScreenshot = entry && $screenshots && (
+		// For combined entries, use the original screenshot ID
+		entry.isCombinedEntry && entry.originalScreenshotId 
+			? $screenshots[entry.originalScreenshotId]
+			: $screenshots[entry.timestamp || entry.id]
+	);
 
 	function formatTimestamp(timestamp) {
 		if (!timestamp) return "";
@@ -127,6 +132,29 @@
 			dispatch("entryselect", $filteredLogs[currentIndex - 1]);
 		}
 	}
+
+	function getExecutionResultStatus(executionResult) {
+		if (!executionResult) return 'info';
+		
+		if (executionResult.successful === true) {
+			return 'success';
+		} else if (executionResult.successful === false) {
+			// Check if this is a user interaction result
+			const resultLower = executionResult.result?.toLowerCase() || '';
+			const isUserInteraction = resultLower.includes('ask_human') || 
+									 resultLower.includes('answer') ||
+									 resultLower.includes('user input') ||
+									 resultLower.includes('confirmation') ||
+									 resultLower.includes('user response') ||
+									 resultLower.includes('human input') ||
+									 resultLower.includes('waiting for user') ||
+									 resultLower.includes('user interaction');
+			
+			return isUserInteraction ? 'user' : 'error';
+		}
+		
+		return 'info';
+	}
 </script>
 
 {#if parsedEntry}
@@ -185,6 +213,33 @@
 				<p class="test-description">
 					{parsedEntry.workstepsData.description}
 				</p>
+			</div>
+		{:else}
+			<div class="test-overview no-worksteps">
+				<div class="test-header">
+					<h2>📋 Log Entry Details</h2>
+					<div class="test-meta">
+						<span class="session-id"
+							>Session: {parsedEntry.sessionId?.substring(
+								0,
+								8,
+							)}...</span
+						>
+						<span class="timestamp"
+							>{formatTimestamp(parsedEntry.timestamp)}</span
+						>
+					</div>
+				</div>
+				<div class="no-worksteps-notice">
+					<p>⚠️ No worksteps data available for this entry.</p>
+					<p>This might happen if:</p>
+					<ul>
+						<li>The worksteps data is malformed or truncated</li>
+						<li>This is a pure screenshot or action entry</li>
+						<li>The worksteps field is missing from the log entry</li>
+					</ul>
+					<p>Check the browser console for parsing warnings.</p>
+				</div>
 			</div>
 		{/if}
 
@@ -285,6 +340,18 @@
 
 				<div class="action-description">
 					<p>{parsedEntry.currentAction.description}</p>
+					
+					<!-- Screenshot Info for Combined Entries -->
+					{#if entry.isCombinedEntry && entry.screenshotInfo}
+						<div class="screenshot-info">
+							<span class="screenshot-indicator">
+								📸 Screenshot captured at {formatTimestamp(entry.screenshotInfo.timestamp)}
+								{#if entry.screenshotInfo.window_selector}
+									on {entry.screenshotInfo.window_selector.replace(/\s*-\s*Google Chrome\*?$/, '')}
+								{/if}
+							</span>
+						</div>
+					{/if}
 				</div>
 
 				{#if parsedEntry.currentAction.details && parsedEntry.currentAction.details.length > 0}
@@ -313,12 +380,14 @@
 			<div class="screenshot-section">
 				<div class="section-header">
 					<h4>📸 Screen Capture</h4>
-					<span class="screenshot-timestamp">Timestamp: {entry.timestamp || entry.id}</span>
+					<span class="screenshot-timestamp">
+						Timestamp: {entry.isCombinedEntry && entry.originalScreenshotId ? entry.originalScreenshotId : (entry.timestamp || entry.id)}
+					</span>
 				</div>
 				<div class="screenshot-container">
 					<img 
 						src={currentScreenshot} 
-						alt="Screen capture for {entry.timestamp || entry.id}"
+						alt="Screen capture for {entry.isCombinedEntry && entry.originalScreenshotId ? entry.originalScreenshotId : (entry.timestamp || entry.id)}"
 						class="screenshot-image"
 						loading="lazy"
 					/>
@@ -356,12 +425,16 @@
 			<div class="execution-result">
 				<h4>📊 Execution Result</h4>
 				<div class="result-details">
-					<div
-						class="status {parsedEntry.executionResult.successful
-							? 'success'
-							: 'error'}"
-					>
-						{parsedEntry.executionResult.successful ? "✅" : "❌"}
+					<div class="status {getExecutionResultStatus(parsedEntry.executionResult)}">
+						{#if getExecutionResultStatus(parsedEntry.executionResult) === 'success'}
+							✅
+						{:else if getExecutionResultStatus(parsedEntry.executionResult) === 'user'}
+							👤
+						{:else if getExecutionResultStatus(parsedEntry.executionResult) === 'error'}
+							❌
+						{:else}
+							ℹ️
+						{/if}
 						{parsedEntry.executionResult.result}
 					</div>
 					{#if parsedEntry.executionResult.windowSelector}
@@ -496,6 +569,35 @@
 		margin: 0;
 		color: #666;
 		font-style: italic;
+	}
+
+	.no-worksteps-notice {
+		background: #fff3cd;
+		border: 1px solid #ffeaa7;
+		border-radius: 8px;
+		padding: 20px;
+		margin-top: 15px;
+	}
+
+	.no-worksteps-notice p {
+		margin: 10px 0;
+		color: #856404;
+		line-height: 1.5;
+	}
+
+	.no-worksteps-notice p:first-child {
+		font-weight: 600;
+		margin-top: 0;
+	}
+
+	.no-worksteps-notice ul {
+		margin: 15px 0;
+		padding-left: 20px;
+		color: #856404;
+	}
+
+	.no-worksteps-notice li {
+		margin: 5px 0;
 	}
 
 	.current-step {
@@ -697,6 +799,20 @@
 		font-weight: 500;
 		color: #333;
 	}
+	
+	.screenshot-info {
+		margin-top: 8px;
+		padding: 6px 10px;
+		background: var(--color-info-light, #e1f5fe);
+		border-radius: 4px;
+		border-left: 3px solid var(--color-info, #2196f3);
+	}
+	
+	.screenshot-indicator {
+		font-size: 12px;
+		color: var(--color-info-dark, #1565c0);
+		font-style: italic;
+	}
 
 	.action-details {
 		margin-top: 12px;
@@ -727,6 +843,19 @@
 	.detail-item.info {
 		background: #d1ecf1;
 		border: 1px solid #bee5eb;
+	}
+	
+	.detail-item.user {
+		background: #e7f3ff;
+		border: 1px solid #b3d9ff;
+		color: #004085;
+		position: relative;
+	}
+	
+	.detail-item.user::before {
+		content: "👤";
+		margin-right: 6px;
+		font-size: 14px;
 	}
 
 	.detail-label {
@@ -845,6 +974,18 @@
 		background: #f8d7da;
 		color: #721c24;
 		border: 1px solid #f5c6cb;
+	}
+
+	.status.user {
+		background: #e7f3ff;
+		color: #004085;
+		border: 1px solid #b3d9ff;
+	}
+
+	.status.info {
+		background: #d1ecf1;
+		color: #0c5460;
+		border: 1px solid #bee5eb;
 	}
 
 	.window-info {
