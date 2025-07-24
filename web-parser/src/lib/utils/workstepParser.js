@@ -16,61 +16,57 @@ export class WorkstepParser {
 			// Check if string appears truncated (common patterns like ending with ******)
 			if (trimmed.includes('***') || (trimmed.endsWith('"') && trimmed.length < 100)) {
 				console.warn('Worksteps string appears truncated, skipping parsing:', trimmed.substring(0, 100) + '...');
-				return null;
+				return { truncated: true, preview: trimmed.substring(0, 200) };
 			}
 			
 			// Check if string doesn't have proper closing braces for large objects
 			if (trimmed.startsWith('{') && !trimmed.endsWith('}') && trimmed.length > 50) {
 				console.warn('Worksteps string has unmatched braces, skipping parsing:', trimmed.substring(0, 100) + '...');
-				return null;
+				return { truncated: true, preview: trimmed.substring(0, 200) };
 			}
 		}
 
-		try {
-			// Handle string representation of dict/object
-			let cleanedString = workstepsString;
-
-			// Convert Python-style dict to JSON
-			if (workstepsString.includes("'")) {
-				// More careful replacement to handle nested quotes
-				cleanedString = workstepsString
-					// First handle boolean and null values
+		// For Python dict strings (which include single quotes), use Function constructor approach
+		// as it handles apostrophes and complex quoting better than simple replacement
+		if (workstepsString.includes("'") && 
+			workstepsString.trim().startsWith('{') &&
+			workstepsString.trim().endsWith('}') &&
+			!workstepsString.includes('import') &&
+			!workstepsString.includes('exec') &&
+			!workstepsString.includes('eval')) {
+			
+			try {
+				// Replace Python-style values with JavaScript equivalents
+				let pythonToJS = workstepsString
 					.replace(/True/g, 'true')
 					.replace(/False/g, 'false')
 					.replace(/None/g, 'null');
 
-				// Replace single quotes with double quotes, but be careful with apostrophes
-				// This is a simplified approach - for complex cases we'll use the Function constructor fallback
-				cleanedString = cleanedString.replace(/'/g, '"');
+				// Use Function constructor instead of eval for better security
+				const parsed = new Function('return ' + pythonToJS)();
+				return parsed;
+			} catch (funcError) {
+				console.warn('Failed to parse worksteps with Function constructor:', funcError);
+				// Fall through to JSON approach as backup
+			}
+		}
+
+		// Try JSON parsing for regular JSON strings or as backup
+		try {
+			let cleanedString = workstepsString;
+
+			// Convert Python-style dict to JSON (backup approach)
+			if (workstepsString.includes("'")) {
+				cleanedString = workstepsString
+					.replace(/True/g, 'true')
+					.replace(/False/g, 'false')
+					.replace(/None/g, 'null')
+					.replace(/'/g, '"');
 			}
 
 			const parsed = JSON.parse(cleanedString);
 			return parsed;
 		} catch (error) {
-			// Try alternative parsing method
-			try {
-				// Use eval as last resort for Python dict literals (be careful!)
-				// Only if the string looks like a Python dict and doesn't contain suspicious code
-				if (workstepsString.trim().startsWith('{') &&
-					workstepsString.trim().endsWith('}') &&
-					!workstepsString.includes('import') &&
-					!workstepsString.includes('exec') &&
-					!workstepsString.includes('eval')) {
-
-					// Replace Python-style values with JavaScript equivalents
-					let pythonToJS = workstepsString
-						.replace(/True/g, 'true')
-						.replace(/False/g, 'false')
-						.replace(/None/g, 'null');
-
-					// Use Function constructor instead of eval for better security
-					const parsed = new Function('return ' + pythonToJS)();
-					return parsed;
-				}
-			} catch (evalError) {
-				console.warn('Failed to parse worksteps with alternative method:', evalError);
-			}
-
 			console.warn('Failed to parse worksteps:', error);
 			return null;
 		}
