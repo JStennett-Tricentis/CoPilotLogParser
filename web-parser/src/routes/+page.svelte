@@ -4,6 +4,7 @@
 	import LogViewer from '$lib/components/LogViewer.svelte';
 	import FilterPanel from '$lib/components/FilterPanel.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
+	import WorkstepViewer from '$lib/components/WorkstepViewer.svelte';
 	import { logStore, filteredLogs, parsedLogs } from '$lib/stores/logStore.js';
 	import { FileProcessor } from '$lib/utils/fileProcessor.js';
 
@@ -32,7 +33,7 @@
 
 	function handleEntrySelect(event) {
 		selectedEntry = event.detail;
-		currentView = 'details';
+		currentView = 'worksteps';
 	}
 
 	function handleFilter(event) {
@@ -148,13 +149,13 @@
 							class="view-btn {currentView === 'list' ? 'active' : ''}"
 							on:click={() => currentView = 'list'}
 						>
-							📋 List
+							📋 Log List
 						</button>
 						<button 
-							class="view-btn {currentView === 'details' ? 'active' : ''}"
-							on:click={() => currentView = 'details'}
+							class="view-btn {currentView === 'worksteps' ? 'active' : ''}"
+							on:click={() => currentView = 'worksteps'}
 						>
-							🔍 Details
+							🎯 Worksteps
 						</button>
 					</div>
 					<FilterPanel 
@@ -192,58 +193,12 @@
 						<div class="view-content">
 							<LogViewer on:entryselect={handleEntrySelect} />
 						</div>
-					{:else if currentView === 'details' && selectedEntry}
-						<div class="view-content details-view">
-							<div class="details-header">
-								<h3>Entry Details</h3>
-								<button class="btn-back" on:click={() => currentView = 'list'}>← Back to List</button>
-							</div>
-							<div class="details-content">
-								<div class="detail-section">
-									<h4>Basic Info</h4>
-									<p><strong>Timestamp:</strong> {selectedEntry.timestamp || selectedEntry.id}</p>
-									{#if selectedEntry.session_id}
-										<p><strong>Session ID:</strong> {selectedEntry.session_id}</p>
-									{/if}
-								</div>
-								
-								{#if selectedEntry.test_steps}
-									<div class="detail-section">
-										<h4>Test Steps ({selectedEntry.test_steps.length})</h4>
-										{#each selectedEntry.test_steps as step}
-											<div class="test-step">
-												<strong>{step.step_name || step.description}</strong>
-												{#if step.screen_name}
-													<br><small>Screen: {step.screen_name}</small>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{/if}
-								
-								{#if selectedEntry.actions}
-									<div class="detail-section">
-										<h4>Actions ({selectedEntry.actions.length})</h4>
-										{#each selectedEntry.actions as action}
-											<div class="action-item">
-												<code>{action.action}</code>
-											</div>
-										{/each}
-									</div>
-								{/if}
-								
-								<div class="detail-section">
-									<h4>Raw Data</h4>
-									<pre class="raw-data">{JSON.stringify(selectedEntry, null, 2)}</pre>
-								</div>
-							</div>
-						</div>
-					{:else if currentView === 'details'}
-						<div class="view-content">
-							<div class="empty-details">
-								<p>Select a log entry to view details</p>
-								<button class="btn" on:click={() => currentView = 'list'}>← Back to List</button>
-							</div>
+					{:else if currentView === 'worksteps'}
+						<div class="view-content worksteps-view">
+							<WorkstepViewer 
+								entry={selectedEntry}
+								on:copy={(e) => console.log('Copied:', e.detail)}
+							/>
 						</div>
 					{/if}
 				</div>

@@ -388,3 +388,8 @@ input, select {
 .empty-details button {
 	margin-top: 20px;
 }
+
+.worksteps-view {
+	padding: 0;
+	overflow: hidden;
+}

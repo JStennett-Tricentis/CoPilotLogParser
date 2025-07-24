@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { filteredLogs } from '$lib/stores/logStore.js';
 	import VirtualTable from './VirtualTable.svelte';
+	import { WorkstepParser } from '$lib/utils/workstepParser.js';
 	
 	const dispatch = createEventDispatcher();
 	
@@ -31,30 +32,47 @@
 	}
 
 	function getEntryTitle(entry) {
-		// Extract meaningful title from entry
-		if (entry.test_steps?.length > 0) {
-			return entry.test_steps[0].description || 'Test Step';
+		// Try to get step information from worksteps
+		const parsedEntry = WorkstepParser.createReadableSummary(entry);
+		
+		if (parsedEntry.stepInfo) {
+			return `Step ${parsedEntry.stepInfo.stepNumber}: ${parsedEntry.stepInfo.stepName}`;
 		}
 		
 		if (entry.description) {
 			// Truncate long descriptions
 			const desc = entry.description.replace(/<[^>]*>/g, '').trim();
-			return desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
+			return desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
 		}
 		
 		return 'Log Entry';
 	}
 
 	function getActionSummary(entry) {
+		const parsedEntry = WorkstepParser.createReadableSummary(entry);
+		
+		// Show visionscript commands if available
+		if (parsedEntry.visionCommands && parsedEntry.visionCommands.length > 0) {
+			return parsedEntry.visionCommands.map(cmd => cmd.description).join(' → ');
+		}
+		
 		if (!entry.actions) return '';
 		
 		return entry.actions.map(action => action.action).join(', ');
 	}
 
 	function getStepCount(entry) {
-		if (entry.test_steps) {
-			return `${entry.test_steps.length} steps`;
+		const parsedEntry = WorkstepParser.createReadableSummary(entry);
+		
+		// Show screen name if available
+		if (parsedEntry.stepInfo && parsedEntry.stepInfo.screenName) {
+			return `📱 ${parsedEntry.stepInfo.screenName}`;
 		}
+		
+		if (parsedEntry.workstepsData && parsedEntry.workstepsData.test_steps) {
+			return `${parsedEntry.workstepsData.test_steps.length} total steps`;
+		}
+		
 		if (entry.actions) {
 			return `${entry.actions.length} actions`;
 		}
@@ -82,15 +100,15 @@
 			accessor: (item) => item.session_id ? item.session_id.substring(0, 8) + '...' : ''
 		},
 		{
-			key: 'steps',
-			header: 'Steps/Actions',
-			width: '100px',
+			key: 'screen',
+			header: 'Screen/Context',
+			width: '150px',
 			accessor: (item) => getStepCount(item)
 		},
 		{
 			key: 'actions',
-			header: 'Actions',
-			width: '200px',
+			header: 'Automation Commands',
+			width: '300px',
 			accessor: (item) => getActionSummary(item)
 		}
 	];
@@ -154,10 +172,10 @@
 						
 						<div class="log-meta">
 							{#if getStepCount(entry)}
-								<span class="log-badge">{getStepCount(entry)}</span>
+								<span class="log-screen-badge">{getStepCount(entry)}</span>
 							{/if}
 							{#if getActionSummary(entry)}
-								<span class="log-actions-summary">{getActionSummary(entry)}</span>
+								<span class="log-commands-summary">{getActionSummary(entry)}</span>
 							{/if}
 						</div>
 					</div>
@@ -277,12 +295,24 @@
 		border-radius: 3px;
 	}
 
-	.log-actions-summary {
+	.log-screen-badge {
+		background: var(--color-info);
+		color: white;
+		font-size: 11px;
+		padding: 2px 6px;
+		border-radius: 3px;
+	}
+
+	.log-commands-summary {
 		font-family: var(--font-mono);
 		font-size: 11px;
 		color: #666;
 		background: var(--color-bg-1);
 		padding: 2px 6px;
 		border-radius: 3px;
+		max-width: 400px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 </style>
