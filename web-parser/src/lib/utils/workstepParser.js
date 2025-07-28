@@ -9,18 +9,12 @@ export class WorkstepParser {
 	static parseWorksteps(workstepsString) {
 		if (!workstepsString) return null;
 
-		// Check for truncated or malformed strings
+		// Only check for actually malformed strings
 		if (typeof workstepsString === 'string') {
 			const trimmed = workstepsString.trim();
 			
-			// Check if string appears truncated (common patterns like ending with ******)
-			if (trimmed.includes('***') || (trimmed.endsWith('"') && trimmed.length < 100)) {
-				console.warn('Worksteps string appears truncated, skipping parsing:', trimmed.substring(0, 100) + '...');
-				return null;
-			}
-			
 			// Check if string doesn't have proper closing braces for large objects
-			if (trimmed.startsWith('{') && !trimmed.endsWith('}') && trimmed.length > 50) {
+			if (trimmed.startsWith('{') && !trimmed.endsWith('}')) {
 				console.warn('Worksteps string has unmatched braces, skipping parsing:', trimmed.substring(0, 100) + '...');
 				return null;
 			}
