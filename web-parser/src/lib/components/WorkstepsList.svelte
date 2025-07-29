@@ -7,6 +7,19 @@
 
 	// Get all logs with worksteps data grouped by test plan
 	$: allWorksteps = extractAllWorkstepDetails($filteredLogs);
+	
+	// Extract global agent instructions from the first entry that has them
+	$: globalAgentInstructions = getGlobalAgentInstructions(allWorksteps);
+
+	function getGlobalAgentInstructions(worksteps) {
+		// Find the first entry that has parsed instructions
+		for (const workstep of worksteps) {
+			if (workstep.parsedEntry.parsedInstructions && workstep.parsedEntry.parsedInstructions.summary) {
+				return workstep.parsedEntry.parsedInstructions;
+			}
+		}
+		return null;
+	}
 
 	function extractAllWorkstepDetails(logs) {
 		const workstepDetails = [];
@@ -116,6 +129,31 @@
 				: "y"} with details
 		</p>
 	</div>
+
+	<!-- Global Agent Behaviour (shown once for all entries) -->
+	{#if globalAgentInstructions}
+		<div class="global-agent-behavior">
+			<details class="agent-behavior-details" open>
+				<summary>🤖 Agent Behavior Guidelines (applies to all entries)</summary>
+				<div class="agent-behavior-content">
+					<p class="instructions-summary-text">
+						{globalAgentInstructions.summary}
+					</p>
+
+					{#if globalAgentInstructions.confirmationRules.length > 0}
+						<details class="confirmation-rules">
+							<summary>Key Confirmation Rules</summary>
+							<ul>
+								{#each globalAgentInstructions.confirmationRules as rule}
+									<li>{rule}</li>
+								{/each}
+							</ul>
+						</details>
+					{/if}
+				</div>
+			</details>
+		</div>
+	{/if}
 
 	{#if allWorksteps.length === 0}
 		<div class="empty-state">
@@ -413,35 +451,6 @@
 						</div>
 					{/if}
 
-					<!-- Agent Instructions Summary - Collapsible like in WorkstepViewer -->
-					{#if workstepDetail.parsedEntry.parsedInstructions && workstepDetail.parsedEntry.parsedInstructions.summary}
-						<div class="instructions-summary">
-							<details class="agent-behavior-details">
-								<summary
-									>🤖 Agent Behavior (Click to expand)</summary
-								>
-								<div class="agent-behavior-content">
-									<p class="instructions-summary-text">
-										{workstepDetail.parsedEntry
-											.parsedInstructions.summary}
-									</p>
-
-									{#if workstepDetail.parsedEntry.parsedInstructions.confirmationRules.length > 0}
-										<details class="confirmation-rules">
-											<summary
-												>Key Confirmation Rules</summary
-											>
-											<ul>
-												{#each workstepDetail.parsedEntry.parsedInstructions.confirmationRules as rule}
-													<li>{rule}</li>
-												{/each}
-											</ul>
-										</details>
-									{/if}
-								</div>
-							</details>
-						</div>
-					{/if}
 
 					{#if index < allWorksteps.length - 1}
 						<div class="section-divider"></div>
@@ -478,6 +487,16 @@
 		color: #666;
 		font-size: 13px;
 		margin: 0;
+	}
+
+	/* Global Agent Behavior */
+	.global-agent-behavior {
+		background: #f8f9fa;
+		padding: 16px;
+		border-radius: 8px;
+		margin-bottom: 16px;
+		border-left: 4px solid #007bff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
 	.empty-state {
