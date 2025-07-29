@@ -341,11 +341,20 @@ input, select {
 	padding: 44px 24px;
 	text-align: center;
 	color: #666;
+	pointer-events: none;
+	user-select: none;
 }
 
 .results-placeholder p:first-child {
 	font-size: 48px;
 	margin-bottom: 16px;
+}
+
+.results-placeholder small {
+	display: block;
+	margin-top: 8px;
+	color: #999;
+	font-style: italic;
 }
 
 .view-content {

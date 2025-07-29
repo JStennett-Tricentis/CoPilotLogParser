@@ -244,8 +244,9 @@
 							<div class="results-placeholder">
 								<p>📊</p>
 								<p>
-									Upload a JSON log file or paste log data to get started
+									Use the tabs above to upload a file or paste JSON data
 								</p>
+								<small>Data will appear here once processed</small>
 							</div>
 						</div>
 					{:else if currentView === "timeline"}

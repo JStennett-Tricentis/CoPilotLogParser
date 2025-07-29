@@ -1,9 +1,9 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import FileUpload from './FileUpload.svelte';
-	import WorkstepViewer from './WorkstepViewer.svelte';
+	import WorkstepsList from './WorkstepsList.svelte';
 	import { FileProcessor } from '$lib/utils/fileProcessor.js';
-	import { WorkstepParser } from '$lib/utils/workstepParser.js';
+	import { logStore } from '$lib/stores/logStore.js';
 	
 	const dispatch = createEventDispatcher();
 	
@@ -11,8 +11,6 @@
 	let rightFile = null;
 	let leftData = [];
 	let rightData = [];
-	let leftEntry = null;
-	let rightEntry = null;
 	let isLoadingLeft = false;
 	let isLoadingRight = false;
 	let fileProcessor = new FileProcessor();
@@ -23,8 +21,6 @@
 		rightFile = null;
 		leftData = [];
 		rightData = [];
-		leftEntry = null;
-		rightEntry = null;
 	}
 	
 	async function handleLeftFileSelect(event) {
@@ -36,9 +32,6 @@
 			// Process file directly without using the global store
 			const entries = await fileProcessor.processFileForCompare(file);
 			leftData = entries;
-			if (leftData.length > 0) {
-				leftEntry = leftData[0];
-			}
 		} catch (error) {
 			console.error('Error processing left file:', error);
 			alert('Error processing left file: ' + error.message);
@@ -56,9 +49,6 @@
 			// Process file directly without using the global store
 			const entries = await fileProcessor.processFileForCompare(file);
 			rightData = entries;
-			if (rightData.length > 0) {
-				rightEntry = rightData[0];
-			}
 		} catch (error) {
 			console.error('Error processing right file:', error);
 			alert('Error processing right file: ' + error.message);
@@ -67,19 +57,11 @@
 		}
 	}
 	
-	function handleLeftEntrySelect(event) {
-		leftEntry = event.detail;
-	}
-	
-	function handleRightEntrySelect(event) {
-		rightEntry = event.detail;
-	}
-	
 	function handleSyncScroll(element) {
 		if (!syncScroll) return;
 		
-		const leftViewer = document.querySelector('.left-viewer .workstep-container');
-		const rightViewer = document.querySelector('.right-viewer .workstep-container');
+		const leftViewer = document.querySelector('.left-viewer');
+		const rightViewer = document.querySelector('.right-viewer');
 		
 		if (!leftViewer || !rightViewer) return;
 		
@@ -88,29 +70,6 @@
 		} else {
 			leftViewer.scrollTop = rightViewer.scrollTop;
 		}
-	}
-	
-	function getEntryDescription(entry) {
-		const parsed = WorkstepParser.createReadableSummary(entry);
-		
-		// Try to get step info first
-		if (parsed.stepInfo) {
-			return `Step ${parsed.stepInfo.stepNumber}: ${parsed.stepInfo.stepName}`;
-		}
-		
-		// Try current action description
-		if (parsed.currentAction && parsed.currentAction.description) {
-			const desc = parsed.currentAction.description;
-			return desc.length > 60 ? desc.substring(0, 60) + '...' : desc;
-		}
-		
-		// Try worksteps name
-		if (parsed.workstepsData?.name) {
-			return parsed.workstepsData.name;
-		}
-		
-		// Fallback to timestamp or index
-		return entry.timestamp || entry.id || 'Entry';
 	}
 </script>
 
@@ -151,23 +110,8 @@
 					/>
 				</div>
 			{:else}
-				<div class="entry-selector">
-					<label>Select Entry:</label>
-					<select bind:value={leftEntry}>
-						{#each leftData as entry, index}
-							<option value={entry}>
-								{getEntryDescription(entry)}
-							</option>
-						{/each}
-					</select>
-				</div>
-				
 				<div class="left-viewer" on:scroll={() => handleSyncScroll('left')}>
-					<WorkstepViewer 
-						entry={leftEntry}
-						on:entryselect={handleLeftEntrySelect}
-						compact={true}
-					/>
+					<WorkstepsList data={leftData} />
 				</div>
 			{/if}
 		</div>
@@ -198,23 +142,8 @@
 					/>
 				</div>
 			{:else}
-				<div class="entry-selector">
-					<label>Select Entry:</label>
-					<select bind:value={rightEntry}>
-						{#each rightData as entry, index}
-							<option value={entry}>
-								{getEntryDescription(entry)}
-							</option>
-						{/each}
-					</select>
-				</div>
-				
 				<div class="right-viewer" on:scroll={() => handleSyncScroll('right')}>
-					<WorkstepViewer 
-						entry={rightEntry}
-						on:entryselect={handleRightEntrySelect}
-						compact={true}
-					/>
+					<WorkstepsList data={rightData} />
 				</div>
 			{/if}
 		</div>
@@ -331,36 +260,6 @@
 		padding: 2rem;
 	}
 	
-	.entry-selector {
-		padding: 1rem;
-		background-color: #f8f9fa;
-		border-bottom: 1px solid #e0e0e0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	
-	.entry-selector label {
-		font-weight: 500;
-		color: #555;
-		font-size: 0.9rem;
-	}
-	
-	.entry-selector select {
-		width: 100%;
-		padding: 0.5rem;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		background-color: white;
-		cursor: pointer;
-	}
-	
-	.entry-selector select:focus {
-		outline: none;
-		border-color: #007bff;
-		box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-	}
 	
 	.left-viewer,
 	.right-viewer {
@@ -391,13 +290,9 @@
 		}
 	}
 	
-	/* Override WorkstepViewer styles for compact view */
-	:global(.compare-panel .workstep-container) {
-		max-width: none;
-		margin: 0;
-	}
-	
-	:global(.compare-panel .workstep-card) {
-		margin: 0.5rem 0;
+	/* Override WorkstepsList styles for compare view */
+	:global(.compare-panel .worksteps-full-list) {
+		padding: 0;
+		background: transparent;
 	}
 </style>

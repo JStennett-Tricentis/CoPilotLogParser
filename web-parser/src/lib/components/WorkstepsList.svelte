@@ -4,9 +4,12 @@
 	import { WorkstepParser } from "$lib/utils/workstepParser.js";
 
 	const dispatch = createEventDispatcher();
+	
+	// Optional data prop for compare mode
+	export let data = null;
 
 	// Get all logs with worksteps data grouped by test plan
-	$: allWorksteps = extractAllWorkstepDetails($filteredLogs);
+	$: allWorksteps = extractAllWorkstepDetails(data || $filteredLogs);
 	
 	// Extract global agent instructions from the first entry that has them
 	$: globalAgentInstructions = getGlobalAgentInstructions(allWorksteps);
@@ -60,14 +63,16 @@
 
 		// Sort by session and timestamp
 		return workstepDetails.sort((a, b) => {
-			if (a.parsedEntry.sessionId !== b.parsedEntry.sessionId) {
-				return a.parsedEntry.sessionId.localeCompare(
-					b.parsedEntry.sessionId
-				);
+			const sessionA = a.parsedEntry.sessionId || '';
+			const sessionB = b.parsedEntry.sessionId || '';
+			
+			if (sessionA !== sessionB) {
+				return sessionA.localeCompare(sessionB);
 			}
-			return (a.entry.timestamp || a.entry.id).localeCompare(
-				b.entry.timestamp || b.entry.id
-			);
+			
+			const timestampA = a.entry.timestamp || a.entry.id || '';
+			const timestampB = b.entry.timestamp || b.entry.id || '';
+			return timestampA.localeCompare(timestampB);
 		});
 	}
 
