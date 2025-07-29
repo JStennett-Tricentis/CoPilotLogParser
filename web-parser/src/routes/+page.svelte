@@ -115,44 +115,53 @@
 		<div class="input-section">
 			<div class="input-tabs">
 				<button
-					class="input-btn {inputMode === 'upload' ? 'active' : ''}"
-					on:click={() => (inputMode = "upload")}
+					class="input-btn {inputMode === 'upload' && currentView !== 'compare' ? 'active' : ''}"
+					on:click={() => {inputMode = "upload"; currentView = "list"}}
 				>
 					📁 Upload File
 				</button>
 				<button
-					class="input-btn {inputMode === 'paste' ? 'active' : ''}"
-					on:click={() => (inputMode = "paste")}
+					class="input-btn {inputMode === 'paste' && currentView !== 'compare' ? 'active' : ''}"
+					on:click={() => {inputMode = "paste"; currentView = "list"}}
 				>
 					📝 Paste JSON
 				</button>
+				<button
+					class="input-btn {currentView === 'compare' ? 'active' : ''}"
+					on:click={() => (currentView = "compare")}
+				>
+					🔀 Compare
+				</button>
 			</div>
 
-			<div class="input-modes">
-				{#if inputMode === "upload"}
-					<div class="input-mode active">
-						<FileUpload
-							on:fileselect={handleFileSelect}
-							{isLoading}
-						/>
-					</div>
-				{:else}
-					<div class="input-mode active">
-						<textarea
-							class="json-input"
-							placeholder="Paste your JSON log data here..."
-							bind:value={pastedJson}
-						></textarea>
-						<button
-							class="parse-btn"
-							on:click={handlePastedJson}
-							disabled={!pastedJson || isLoading}
-						>
-							{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
-						</button>
-					</div>
-				{/if}
-			</div>
+			<!-- Only show input modes when NOT in compare mode -->
+			{#if currentView !== "compare"}
+				<div class="input-modes">
+					{#if inputMode === "upload"}
+						<div class="input-mode active">
+							<FileUpload
+								on:fileselect={handleFileSelect}
+								{isLoading}
+							/>
+						</div>
+					{:else}
+						<div class="input-mode active">
+							<textarea
+								class="json-input"
+								placeholder="Paste your JSON log data here..."
+								bind:value={pastedJson}
+							></textarea>
+							<button
+								class="parse-btn"
+								on:click={handlePastedJson}
+								disabled={!pastedJson || isLoading}
+							>
+								{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
+							</button>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Combined Header -->
@@ -199,14 +208,6 @@
 						>
 							📑 Worksteps List
 						</button>
-						<button
-							class="view-btn {currentView === 'compare'
-								? 'active'
-								: ''}"
-							on:click={() => (currentView = "compare")}
-						>
-							🔀 Compare
-						</button>
 					</div>
 					<FilterPanel
 						allData={$parsedLogs}
@@ -224,7 +225,13 @@
 
 		<!-- Results Section -->
 		<div class="results-section">
-			{#if $parsedLogs.length === 0}
+			{#if currentView === "compare"}
+				<div class="results-container">
+					<div class="view-content compare-view">
+						<CompareView />
+					</div>
+				</div>
+			{:else if $parsedLogs.length === 0}
 				<div class="results-placeholder">
 					<p>📊</p>
 					<p>
@@ -258,10 +265,6 @@
 								on:entryselect={handleEntrySelect}
 								on:backtolist={handleBackToList}
 							/>
-						</div>
-					{:else if currentView === "compare"}
-						<div class="view-content compare-view">
-							<CompareView />
 						</div>
 					{/if}
 				</div>

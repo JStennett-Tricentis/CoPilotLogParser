@@ -3,6 +3,7 @@
 	import FileUpload from './FileUpload.svelte';
 	import WorkstepViewer from './WorkstepViewer.svelte';
 	import { FileProcessor } from '$lib/utils/fileProcessor.js';
+	import { WorkstepParser } from '$lib/utils/workstepParser.js';
 	
 	const dispatch = createEventDispatcher();
 	
@@ -16,6 +17,15 @@
 	let isLoadingRight = false;
 	let fileProcessor = new FileProcessor();
 	let syncScroll = true;
+	
+	function clearComparison() {
+		leftFile = null;
+		rightFile = null;
+		leftData = [];
+		rightData = [];
+		leftEntry = null;
+		rightEntry = null;
+	}
 	
 	async function handleLeftFileSelect(event) {
 		const { detail: { file } } = event;
@@ -79,15 +89,45 @@
 			leftViewer.scrollTop = rightViewer.scrollTop;
 		}
 	}
+	
+	function getEntryDescription(entry) {
+		const parsed = WorkstepParser.createReadableSummary(entry);
+		
+		// Try to get step info first
+		if (parsed.stepInfo) {
+			return `Step ${parsed.stepInfo.stepNumber}: ${parsed.stepInfo.stepName}`;
+		}
+		
+		// Try current action description
+		if (parsed.currentAction && parsed.currentAction.description) {
+			const desc = parsed.currentAction.description;
+			return desc.length > 60 ? desc.substring(0, 60) + '...' : desc;
+		}
+		
+		// Try worksteps name
+		if (parsed.workstepsData?.name) {
+			return parsed.workstepsData.name;
+		}
+		
+		// Fallback to timestamp or index
+		return entry.timestamp || entry.id || 'Entry';
+	}
 </script>
 
 <div class="compare-container">
 	<div class="compare-header">
 		<h2>Compare Test Runs</h2>
-		<label class="sync-toggle">
-			<input type="checkbox" bind:checked={syncScroll}>
-			<span>Sync Scrolling</span>
-		</label>
+		<div class="header-controls">
+			<label class="sync-toggle">
+				<input type="checkbox" bind:checked={syncScroll}>
+				<span>Sync Scrolling</span>
+			</label>
+			{#if leftData.length > 0 || rightData.length > 0}
+				<button class="clear-btn" on:click={clearComparison}>
+					🗑️ Clear All
+				</button>
+			{/if}
+		</div>
 	</div>
 	
 	<div class="compare-panels">
@@ -95,9 +135,14 @@
 		<div class="compare-panel left-panel">
 			<div class="panel-header">
 				<h3>Test Run 1</h3>
-				{#if leftFile}
-					<span class="file-name" title={leftFile.name}>{leftFile.name}</span>
-				{/if}
+				<div class="panel-info">
+					{#if leftFile}
+						<span class="file-name" title={leftFile.name}>{leftFile.name}</span>
+					{/if}
+					{#if leftData.length > 0}
+						<span class="entry-count">{leftData.length} entries</span>
+					{/if}
+				</div>
 			</div>
 			
 			{#if !leftData.length}
@@ -110,10 +155,11 @@
 				</div>
 			{:else}
 				<div class="entry-selector">
-					<select on:change={(e) => leftEntry = leftData[e.target.value]}>
+					<label>Select Entry:</label>
+					<select bind:value={leftEntry}>
 						{#each leftData as entry, index}
-							<option value={index}>
-								{entry.parsedData?.currentStep?.step_name || entry.description || `Entry ${index + 1}`}
+							<option value={entry}>
+								{getEntryDescription(entry)}
 							</option>
 						{/each}
 					</select>
@@ -136,9 +182,14 @@
 		<div class="compare-panel right-panel">
 			<div class="panel-header">
 				<h3>Test Run 2</h3>
-				{#if rightFile}
-					<span class="file-name" title={rightFile.name}>{rightFile.name}</span>
-				{/if}
+				<div class="panel-info">
+					{#if rightFile}
+						<span class="file-name" title={rightFile.name}>{rightFile.name}</span>
+					{/if}
+					{#if rightData.length > 0}
+						<span class="entry-count">{rightData.length} entries</span>
+					{/if}
+				</div>
 			</div>
 			
 			{#if !rightData.length}
@@ -151,10 +202,11 @@
 				</div>
 			{:else}
 				<div class="entry-selector">
-					<select on:change={(e) => rightEntry = rightData[e.target.value]}>
+					<label>Select Entry:</label>
+					<select bind:value={rightEntry}>
 						{#each rightData as entry, index}
-							<option value={index}>
-								{entry.parsedData?.currentStep?.step_name || entry.description || `Entry ${index + 1}`}
+							<option value={entry}>
+								{getEntryDescription(entry)}
 							</option>
 						{/each}
 					</select>
@@ -194,6 +246,12 @@
 		color: #333;
 	}
 	
+	.header-controls {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+	
 	.sync-toggle {
 		display: flex;
 		align-items: center;
@@ -203,6 +261,21 @@
 	
 	.sync-toggle input {
 		cursor: pointer;
+	}
+	
+	.clear-btn {
+		background: #dc3545;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: background-color 0.2s ease;
+	}
+	
+	.clear-btn:hover {
+		background: #c82333;
 	}
 	
 	.compare-panels {
@@ -233,6 +306,13 @@
 		color: #555;
 	}
 	
+	.panel-info {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.25rem;
+	}
+	
 	.file-name {
 		font-size: 0.9rem;
 		color: #666;
@@ -240,6 +320,15 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	
+	.entry-count {
+		font-size: 0.8rem;
+		color: #888;
+		background: #e9ecef;
+		padding: 2px 6px;
+		border-radius: 12px;
+		font-weight: 500;
 	}
 	
 	.upload-area {
@@ -254,6 +343,15 @@
 		padding: 1rem;
 		background-color: #f8f9fa;
 		border-bottom: 1px solid #e0e0e0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	
+	.entry-selector label {
+		font-weight: 500;
+		color: #555;
+		font-size: 0.9rem;
 	}
 	
 	.entry-selector select {
@@ -264,6 +362,12 @@
 		font-size: 0.9rem;
 		background-color: white;
 		cursor: pointer;
+	}
+	
+	.entry-selector select:focus {
+		outline: none;
+		border-color: #007bff;
+		box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 	}
 	
 	.left-viewer,
