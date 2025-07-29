@@ -42,7 +42,7 @@
 	}
 </script>
 
-<div class="virtual-table" style="height: {height}px;">
+<div class="virtual-table">
 	<!-- Header -->
 	<div class="table-header">
 		{#each columns as column}
@@ -57,7 +57,6 @@
 		class="table-body"
 		bind:this={container}
 		on:scroll={handleScroll}
-		style="height: {height - 40}px;"
 	>
 		<div 
 			class="table-content"
@@ -92,8 +91,10 @@
 	.virtual-table {
 		border: 1px solid var(--color-border);
 		border-radius: 4px;
-		overflow: hidden;
 		background: white;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.table-header {
@@ -120,6 +121,8 @@
 	.table-body {
 		overflow: auto;
 		position: relative;
+		flex: 1;
+		min-height: 0;
 	}
 
 	.table-content {

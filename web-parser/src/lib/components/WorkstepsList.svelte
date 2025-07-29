@@ -455,7 +455,6 @@
 <style>
 	.worksteps-full-list {
 		padding: 12px;
-		max-height: 100vh;
 		overflow-y: auto;
 		background: #f5f5f5;
 	}
