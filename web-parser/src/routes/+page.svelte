@@ -229,21 +229,26 @@
 		<!-- Results Section -->
 		<div class="results-section">
 			{#if currentView === "compare"}
-				<div class="results-container">
-					<div class="view-content compare-view">
-						<CompareView />
+				<div class="compare-section">
+					<h3>Compare Test Runs</h3>
+					<div class="results-container">
+						<div class="view-content compare-view">
+							<CompareView />
+						</div>
 					</div>
-				</div>
-			{:else if $parsedLogs.length === 0}
-				<div class="results-placeholder">
-					<p>📊</p>
-					<p>
-						Upload a JSON log file or paste log data to get started
-					</p>
 				</div>
 			{:else}
 				<div class="results-container">
-					{#if currentView === "timeline"}
+					{#if $parsedLogs.length === 0}
+						<div class="view-content">
+							<div class="results-placeholder">
+								<p>📊</p>
+								<p>
+									Upload a JSON log file or paste log data to get started
+								</p>
+							</div>
+						</div>
+					{:else if currentView === "timeline"}
 						<div class="view-content">
 							<Timeline
 								data={$filteredLogs}

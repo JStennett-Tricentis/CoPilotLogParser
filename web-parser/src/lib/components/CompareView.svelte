@@ -115,7 +115,6 @@
 </script>
 
 <div class="compare-container">
-	<h3>Compare Test Runs</h3>
 	<div class="compare-controls">
 		<label class="sync-toggle">
 			<input type="checkbox" bind:checked={syncScroll}>
@@ -227,15 +226,9 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		padding: 20px;
+		padding: 16px;
 	}
 	
-	.compare-container h3 {
-		margin: 0 0 16px 0;
-		font-size: 18px;
-		color: #333;
-		font-weight: 600;
-	}
 	
 	.compare-controls {
 		display: flex;

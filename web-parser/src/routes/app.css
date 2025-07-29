@@ -338,7 +338,7 @@ input, select {
 }
 
 .results-placeholder {
-	padding: 60px 40px;
+	padding: 44px 24px;
 	text-align: center;
 	color: #666;
 }
@@ -397,12 +397,28 @@ input, select {
 	overflow: hidden;
 }
 
+.compare-view {
+	padding: 0;
+}
+
 /* Paste JSON section styling to match FileUpload */
 .paste-json-section {
 	padding: 20px;
 }
 
 .paste-json-section h3 {
+	margin: 0 0 16px 0;
+	font-size: 18px;
+	color: #333;
+	font-weight: 600;
+}
+
+/* Compare section styling to match other tabs */
+.compare-section {
+	padding: 20px;
+}
+
+.compare-section h3 {
 	margin: 0 0 16px 0;
 	font-size: 18px;
 	color: #333;
