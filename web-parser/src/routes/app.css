@@ -397,3 +397,15 @@ input, select {
 	overflow: hidden;
 }
 
+/* Paste JSON section styling to match FileUpload */
+.paste-json-section {
+	padding: 20px;
+}
+
+.paste-json-section h3 {
+	margin: 0 0 16px 0;
+	font-size: 18px;
+	color: #333;
+	font-weight: 600;
+}
+

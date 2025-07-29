@@ -88,7 +88,14 @@
 
 <style>
 	.file-upload {
-		margin-bottom: 24px;
+		padding: 20px;
+	}
+
+	.file-upload h3 {
+		margin: 0 0 16px 0;
+		font-size: 18px;
+		color: #333;
+		font-weight: 600;
 	}
 
 	.drop-zone {

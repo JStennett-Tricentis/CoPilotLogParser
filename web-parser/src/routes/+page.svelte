@@ -146,18 +146,21 @@
 						</div>
 					{:else}
 						<div class="input-mode active">
-							<textarea
-								class="json-input"
-								placeholder="Paste your JSON log data here..."
-								bind:value={pastedJson}
-							></textarea>
-							<button
-								class="parse-btn"
-								on:click={handlePastedJson}
-								disabled={!pastedJson || isLoading}
-							>
-								{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
-							</button>
+							<div class="paste-json-section">
+								<h3>Paste JSON Data</h3>
+								<textarea
+									class="json-input"
+									placeholder="Paste your JSON log data here..."
+									bind:value={pastedJson}
+								></textarea>
+								<button
+									class="parse-btn"
+									on:click={handlePastedJson}
+									disabled={!pastedJson || isLoading}
+								>
+									{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
+								</button>
+							</div>
 						</div>
 					{/if}
 				</div>

@@ -115,19 +115,17 @@
 </script>
 
 <div class="compare-container">
-	<div class="compare-header">
-		<h2>Compare Test Runs</h2>
-		<div class="header-controls">
-			<label class="sync-toggle">
-				<input type="checkbox" bind:checked={syncScroll}>
-				<span>Sync Scrolling</span>
-			</label>
-			{#if leftData.length > 0 || rightData.length > 0}
-				<button class="clear-btn" on:click={clearComparison}>
-					🗑️ Clear All
-				</button>
-			{/if}
-		</div>
+	<h3>Compare Test Runs</h3>
+	<div class="compare-controls">
+		<label class="sync-toggle">
+			<input type="checkbox" bind:checked={syncScroll}>
+			<span>Sync Scrolling</span>
+		</label>
+		{#if leftData.length > 0 || rightData.length > 0}
+			<button class="clear-btn" on:click={clearComparison}>
+				🗑️ Clear All
+			</button>
+		{/if}
 	</div>
 	
 	<div class="compare-panels">
@@ -229,27 +227,25 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+		padding: 20px;
 	}
 	
-	.compare-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid #e0e0e0;
-		background-color: #f8f9fa;
-	}
-	
-	.compare-header h2 {
-		margin: 0;
-		font-size: 1.5rem;
+	.compare-container h3 {
+		margin: 0 0 16px 0;
+		font-size: 18px;
 		color: #333;
+		font-weight: 600;
 	}
 	
-	.header-controls {
+	.compare-controls {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		margin-bottom: 20px;
+		padding: 12px;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+		border: 1px solid #e0e0e0;
 	}
 	
 	.sync-toggle {
@@ -282,6 +278,9 @@
 		flex: 1;
 		display: flex;
 		overflow: hidden;
+		border: 1px solid #e0e0e0;
+		border-radius: 8px;
+		background: white;
 	}
 	
 	.compare-panel {
