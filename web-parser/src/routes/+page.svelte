@@ -2,9 +2,11 @@
 	import { onMount } from 'svelte';
 	import FileUpload from '$lib/components/FileUpload.svelte';
 	import LogViewer from '$lib/components/LogViewer.svelte';
+	import WorkstepsList from '$lib/components/WorkstepsList.svelte';
 	import FilterPanel from '$lib/components/FilterPanel.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
 	import WorkstepViewer from '$lib/components/WorkstepViewer.svelte';
+	import CompareView from '$lib/components/CompareView.svelte';
 	import { logStore, filteredLogs, parsedLogs } from '$lib/stores/logStore.js';
 	import { FileProcessor } from '$lib/utils/fileProcessor.js';
 
@@ -157,10 +159,22 @@
 							📋 Log List
 						</button>
 						<button 
+							class="view-btn {currentView === 'worksteps-list' ? 'active' : ''}"
+							on:click={() => currentView = 'worksteps-list'}
+						>
+							📑 Worksteps List
+						</button>
+						<button 
 							class="view-btn {currentView === 'worksteps' ? 'active' : ''}"
 							on:click={() => currentView = 'worksteps'}
 						>
 							🎯 Workstep Detail
+						</button>
+						<button 
+							class="view-btn {currentView === 'compare' ? 'active' : ''}"
+							on:click={() => currentView = 'compare'}
+						>
+							🔀 Compare
 						</button>
 					</div>
 					<FilterPanel 
@@ -198,6 +212,10 @@
 						<div class="view-content">
 							<LogViewer on:entryselect={handleEntrySelect} />
 						</div>
+					{:else if currentView === 'worksteps-list'}
+						<div class="view-content">
+							<WorkstepsList on:entryselect={handleEntrySelect} />
+						</div>
 					{:else if currentView === 'worksteps'}
 						<div class="view-content worksteps-view">
 							<WorkstepViewer 
@@ -206,6 +224,10 @@
 								on:entryselect={handleEntrySelect}
 								on:backtolist={handleBackToList}
 							/>
+						</div>
+					{:else if currentView === 'compare'}
+						<div class="view-content compare-view">
+							<CompareView />
 						</div>
 					{/if}
 				</div>
