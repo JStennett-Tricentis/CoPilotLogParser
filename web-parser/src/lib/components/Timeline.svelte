@@ -153,9 +153,6 @@
 	function getItemDescription(entry) {
 		const details = [];
 		
-		if (entry.session_id) {
-			details.push(`Session: ${entry.session_id.substring(0, 8)}...`);
-		}
 		
 		if (entry.actions) {
 			details.push(`${entry.actions.length} actions`);

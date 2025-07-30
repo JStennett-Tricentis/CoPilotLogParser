@@ -144,12 +144,6 @@
 			accessor: (item) => getEntryTitle(item)
 		},
 		{
-			key: 'session',
-			header: 'Session',
-			width: '120px',
-			accessor: (item) => item.session_id ? item.session_id.substring(0, 8) + '...' : ''
-		},
-		{
 			key: 'screen',
 			header: 'Screen/Context',
 			width: '150px',
@@ -218,11 +212,6 @@
 									<span class="combined-indicator" title="Combined screenshot + analysis entry">🔗</span>
 								{/if}
 							</div>
-							{#if entry.session_id}
-								<div class="log-session">
-									Session: {entry.session_id.substring(0, 8)}...
-								</div>
-							{/if}
 						</div>
 						
 						<div class="log-description">
@@ -327,11 +316,6 @@
 		border-radius: 3px;
 	}
 
-	.log-session {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		color: var(--color-theme-1);
-	}
 
 	.log-description {
 		font-weight: 500;

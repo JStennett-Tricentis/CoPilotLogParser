@@ -221,12 +221,6 @@
 				<div class="test-header">
 					<h2>{parsedEntry.workstepsData.name}</h2>
 					<div class="test-meta">
-						<span class="session-id"
-							>Session: {parsedEntry.sessionId?.substring(
-								0,
-								8,
-							)}...</span
-						>
 						<span class="timestamp"
 							>{formatTimestamp(parsedEntry.timestamp)}</span
 						>
@@ -571,13 +565,6 @@
 		color: #666;
 	}
 
-	.session-id {
-		background: var(--color-info);
-		color: white;
-		padding: 2px 6px;
-		border-radius: 3px;
-		font-family: var(--font-mono);
-	}
 
 	.timestamp {
 		font-family: var(--font-mono);

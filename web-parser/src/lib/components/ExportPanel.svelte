@@ -134,7 +134,7 @@
 				<small>
 					<strong>Summary Report includes:</strong><br>
 					• Total entries and date range<br>
-					• Session count and action types<br>
+					• Action types<br>
 					• Test step statistics<br>
 					• Generated metadata
 				</small>

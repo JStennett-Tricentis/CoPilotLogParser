@@ -102,7 +102,6 @@ export class ExportUtils {
 		const report = {
 			totalEntries: data.length,
 			dateRange: this.getDateRange(data),
-			sessionCount: this.getUniqueSessionCount(data),
 			actionSummary: this.getActionSummary(data),
 			stepSummary: this.getStepSummary(data),
 			generatedAt: new Date().toISOString()
@@ -128,15 +127,6 @@ export class ExportUtils {
 		};
 	}
 
-	static getUniqueSessionCount(data) {
-		const sessions = new Set();
-		data.forEach(item => {
-			if (item.session_id) {
-				sessions.add(item.session_id);
-			}
-		});
-		return sessions.size;
-	}
 
 	static getActionSummary(data) {
 		const actionCounts = {};

@@ -61,15 +61,8 @@
 			});
 		});
 
-		// Sort by session and timestamp
+		// Sort by timestamp
 		return workstepDetails.sort((a, b) => {
-			const sessionA = a.parsedEntry.sessionId || '';
-			const sessionB = b.parsedEntry.sessionId || '';
-			
-			if (sessionA !== sessionB) {
-				return sessionA.localeCompare(sessionB);
-			}
-			
 			const timestampA = a.entry.timestamp || a.entry.id || '';
 			const timestampB = b.entry.timestamp || b.entry.id || '';
 			return timestampA.localeCompare(timestampB);
@@ -183,12 +176,6 @@
 									?.name || "Log Entry " + (index + 1)}
 							</h2>
 							<div class="test-meta">
-								<span class="session-id"
-									>Session: {workstepDetail.parsedEntry.sessionId?.substring(
-										0,
-										8
-									) || "Unknown"}...</span
-								>
 								<span class="timestamp"
 									>{formatTimestamp(
 										workstepDetail.entry.timestamp ||
@@ -573,13 +560,6 @@
 		font-size: 12px;
 	}
 
-	.session-id {
-		background: var(--color-info, #17a2b8);
-		color: white;
-		padding: 2px 6px;
-		border-radius: 3px;
-		font-family: monospace;
-	}
 
 	.timestamp {
 		color: #666;

@@ -8,7 +8,6 @@
 	
 	const dispatch = createEventDispatcher();
 	
-	let sessionId = '';
 	let stepName = '';
 	let screenName = '';
 	let searchText = '';
@@ -17,7 +16,6 @@
 
 	function applyFilters() {
 		dispatch('filter', {
-			sessionId,
 			stepName,
 			screenName,
 			searchText,
@@ -26,7 +24,6 @@
 	}
 
 	function clearFilters() {
-		sessionId = '';
 		stepName = '';
 		screenName = '';
 		searchText = '';
@@ -36,7 +33,6 @@
 	}
 
 	// Apply filters on input change
-	$: if (sessionId !== undefined) applyFilters();
 </script>
 
 {#if compact}
@@ -62,15 +58,6 @@
 			>
 		</div>
 
-		<div class="form-group">
-			<label for="sessionId">Session ID</label>
-			<input
-				id="sessionId"
-				type="text"
-				placeholder="Session ID"
-				bind:value={sessionId}
-			>
-		</div>
 
 		<div class="form-group">
 			<label for="stepName">Step Name</label>

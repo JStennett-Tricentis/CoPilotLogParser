@@ -347,7 +347,6 @@ export class WorkstepParser {
 	static createReadableSummary(entry) {
 		const summary = {
 			timestamp: entry.timestamp || entry.id,
-			sessionId: entry.session_id,
 			description: entry.description,
 			thoughts: entry.thoughts,
 			stepInfo: null,

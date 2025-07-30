@@ -4,7 +4,6 @@ import { WorkstepParser } from '$lib/utils/workstepParser.js';
 export const rawLogs = writable(null);
 export const screenshots = writable({});
 export const filters = writable({
-	sessionId: '',
 	stepName: '',
 	screenName: '',
 	timeRange: { start: '', end: '' },
@@ -42,10 +41,6 @@ export const filteredLogs = derived(
 		if (!$parsedLogs.length) return [];
 		
 		return $parsedLogs.filter(entry => {
-			// Session ID filter
-			if ($filters.sessionId && !entry.session_id?.includes($filters.sessionId)) {
-				return false;
-			}
 			
 			// Step name filter
 			if ($filters.stepName) {
@@ -86,8 +81,7 @@ export const logStore = {
 		screenshots.set({});
 	},
 	clearFilters: () => filters.set({
-		sessionId: '',
-		stepName: '',
+			stepName: '',
 		screenName: '',
 		timeRange: { start: '', end: '' },
 		searchText: ''
