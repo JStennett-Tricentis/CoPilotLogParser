@@ -213,40 +213,6 @@
 				</button>
 			</div>
 
-			<div class="input-modes">
-				{#if inputMode === "upload"}
-					<div class="input-mode active">
-						<FileUpload
-							on:fileselect={handleFileSelect}
-							{isLoading}
-						/>
-					</div>
-				{:else if inputMode === "paste"}
-					<div class="input-mode active">
-						<div class="paste-json-section">
-							<h3>Paste JSON Data</h3>
-							<textarea
-								class="json-input"
-								placeholder="Paste your JSON log data here..."
-								bind:value={pastedJson}
-							></textarea>
-							<button
-								class="parse-btn"
-								on:click={handlePastedJson}
-								disabled={!pastedJson || isLoading}
-							>
-								{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
-							</button>
-						</div>
-					</div>
-				{:else if inputMode === "compare"}
-					<div class="input-mode active">
-						<div class="compare-landing">
-							<p>Switch to Compare view to compare test runs</p>
-						</div>
-					</div>
-				{/if}
-			</div>
 		</div>
 		{/if}
 
@@ -276,14 +242,29 @@
 			{:else}
 				<div class="results-container">
 					{#if $parsedLogs.length === 0}
-						<div class="view-content">
-							<div class="results-placeholder">
-								<p>📊</p>
-								<p>
-									Use the tabs above to upload a file or paste JSON data
-								</p>
-								<small>Data will appear here once processed</small>
-							</div>
+						<div class="view-content expanded-input">
+							{#if inputMode === "upload"}
+								<FileUpload
+									on:fileselect={handleFileSelect}
+									{isLoading}
+									expanded={true}
+								/>
+							{:else if inputMode === "paste"}
+								<div class="expanded-paste-section">
+									<textarea
+										class="expanded-json-input"
+										placeholder="Paste your JSON log data here..."
+										bind:value={pastedJson}
+									></textarea>
+									<button
+										class="expanded-parse-btn"
+										on:click={handlePastedJson}
+										disabled={!pastedJson || isLoading}
+									>
+										{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
+									</button>
+								</div>
+							{/if}
 						</div>
 					{:else if currentView === "timeline"}
 						<div class="view-content">

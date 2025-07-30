@@ -455,3 +455,60 @@ input, select {
 	font-weight: 600;
 }
 
+/* Expanded input sections */
+.expanded-input {
+	min-height: 600px;
+	display: flex;
+	flex-direction: column;
+}
+
+.expanded-paste-section {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 600px;
+	padding: 20px;
+	gap: 16px;
+}
+
+.expanded-json-input {
+	flex: 1;
+	min-height: 520px;
+	padding: 16px;
+	border: 2px dashed var(--color-border);
+	border-radius: 8px;
+	background: var(--color-bg-1);
+	font-family: var(--font-mono);
+	font-size: 14px;
+	resize: vertical;
+	transition: border-color 0.2s ease;
+}
+
+.expanded-json-input:focus {
+	outline: none;
+	border-color: var(--color-theme-1);
+	border-style: solid;
+}
+
+.expanded-parse-btn {
+	align-self: flex-start;
+	background: var(--color-theme-1);
+	color: white;
+	border: none;
+	padding: 12px 24px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: 500;
+	transition: background-color 0.2s ease;
+}
+
+.expanded-parse-btn:hover:not(:disabled) {
+	background: var(--color-theme-2);
+}
+
+.expanded-parse-btn:disabled {
+	background: #ccc;
+	cursor: not-allowed;
+}
+

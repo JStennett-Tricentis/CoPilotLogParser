@@ -101,11 +101,15 @@
 	.drop-zone {
 		border: 2px dashed var(--color-border);
 		border-radius: 8px;
-		padding: 32px 16px;
+		padding: 120px 16px;
 		text-align: center;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		margin: 12px 0;
+		min-height: 300px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.drop-zone:hover,
