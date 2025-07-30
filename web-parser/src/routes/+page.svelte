@@ -21,6 +21,7 @@
 	let pastedJson = "";
 	let currentView = "list";
 	let searchTerm = "";
+	let showInputSection = true;
 
 	async function handleFileSelect(event) {
 		const {
@@ -33,6 +34,7 @@
 			console.log(
 				`Successfully processed ${result.entries} entries using ${result.method || "direct"} method`
 			);
+			showInputSection = false;
 		} catch (error) {
 			console.error("Error processing file:", error);
 			alert("Error processing file: " + error.message);
@@ -85,6 +87,7 @@
 			console.log(
 				`Successfully processed ${result.entries} entries from pasted JSON`
 			);
+			showInputSection = false;
 		} catch (error) {
 			console.error("Error parsing JSON:", error);
 			alert("Error parsing JSON: " + error.message);
@@ -94,7 +97,7 @@
 	}
 
 	function handleSearch() {
-		const filters = { search: searchTerm };
+		const filters = { searchText: searchTerm };
 		logStore.applyFilters(filters);
 	}
 </script>
@@ -111,66 +114,21 @@
 	</div>
 
 	<div class="main-content">
-		<!-- Input Section -->
-		<div class="input-section">
-			<div class="input-tabs">
-				<button
-					class="input-btn {inputMode === 'upload' && currentView !== 'compare' ? 'active' : ''}"
-					on:click={() => {inputMode = "upload"; currentView = "list"}}
-				>
-					📁 Upload File
-				</button>
-				<button
-					class="input-btn {inputMode === 'paste' && currentView !== 'compare' ? 'active' : ''}"
-					on:click={() => {inputMode = "paste"; currentView = "list"}}
-				>
-					📝 Paste JSON
-				</button>
-				<button
-					class="input-btn {currentView === 'compare' ? 'active' : ''}"
-					on:click={() => (currentView = "compare")}
-				>
-					🔀 Compare
-				</button>
-			</div>
-
-			<!-- Only show input modes when NOT in compare mode -->
-			{#if currentView !== "compare"}
-				<div class="input-modes">
-					{#if inputMode === "upload"}
-						<div class="input-mode active">
-							<FileUpload
-								on:fileselect={handleFileSelect}
-								{isLoading}
-							/>
-						</div>
-					{:else}
-						<div class="input-mode active">
-							<div class="paste-json-section">
-								<h3>Paste JSON Data</h3>
-								<textarea
-									class="json-input"
-									placeholder="Paste your JSON log data here..."
-									bind:value={pastedJson}
-								></textarea>
-								<button
-									class="parse-btn"
-									on:click={handlePastedJson}
-									disabled={!pastedJson || isLoading}
-								>
-									{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
-								</button>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/if}
-		</div>
-
-		<!-- Combined Header -->
+		<!-- Combined Header with New Button -->
 		{#if $parsedLogs.length > 0}
 			<div class="filters-section">
 				<div class="filters-content">
+					<button
+						class="new-btn"
+						on:click={() => {
+							showInputSection = true;
+							currentView = "list";
+							logStore.clearLogs();
+						}}
+						title="Clear current logs and start fresh"
+					>
+						➕ New
+					</button>
 					<input
 						type="text"
 						placeholder="Search logs..."
@@ -211,6 +169,12 @@
 						>
 							📑 Worksteps List
 						</button>
+						<button
+							class="view-btn {currentView === 'compare' ? 'active' : ''}"
+							on:click={() => (currentView = "compare")}
+						>
+							🔀 Compare
+						</button>
 					</div>
 					<FilterPanel
 						allData={$parsedLogs}
@@ -224,6 +188,55 @@
 					</div>
 				</div>
 			</div>
+		{/if}
+
+		<!-- Input Section -->
+		{#if showInputSection && $parsedLogs.length === 0}
+		<div class="input-section">
+			<div class="input-tabs">
+				<button
+					class="input-btn {inputMode === 'upload' ? 'active' : ''}"
+					on:click={() => {inputMode = "upload";}}
+				>
+					📁 Upload File
+				</button>
+				<button
+					class="input-btn {inputMode === 'paste' ? 'active' : ''}"
+					on:click={() => {inputMode = "paste";}}
+				>
+					📝 Paste JSON
+				</button>
+			</div>
+
+			<div class="input-modes">
+				{#if inputMode === "upload"}
+					<div class="input-mode active">
+						<FileUpload
+							on:fileselect={handleFileSelect}
+							{isLoading}
+						/>
+					</div>
+				{:else}
+					<div class="input-mode active">
+						<div class="paste-json-section">
+							<h3>Paste JSON Data</h3>
+							<textarea
+								class="json-input"
+								placeholder="Paste your JSON log data here..."
+								bind:value={pastedJson}
+							></textarea>
+							<button
+								class="parse-btn"
+								on:click={handlePastedJson}
+								disabled={!pastedJson || isLoading}
+							>
+								{#if isLoading}🔄 Processing...{:else}🔄 Parse JSON{/if}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
 		{/if}
 
 		<!-- Results Section -->
