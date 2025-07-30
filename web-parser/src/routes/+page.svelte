@@ -99,6 +99,15 @@
 		const filters = { searchText: searchTerm };
 		logStore.applyFilters(filters);
 	}
+	
+	function handleWorkstepDetailClick() {
+		currentView = "worksteps";
+		
+		// Auto-load first entry if no entry is selected
+		if (!selectedEntry && $filteredLogs.length > 0) {
+			selectedEntry = $filteredLogs[0];
+		}
+	}
 </script>
 
 <svelte:head>
@@ -156,7 +165,7 @@
 							class="view-btn {currentView === 'worksteps'
 								? 'active'
 								: ''}"
-							on:click={() => (currentView = "worksteps")}
+							on:click={handleWorkstepDetailClick}
 						>
 							🎯 Workstep Detail
 						</button>

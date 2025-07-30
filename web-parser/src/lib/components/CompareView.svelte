@@ -1,11 +1,7 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import FileUpload from './FileUpload.svelte';
-	import WorkstepsList from './WorkstepsList.svelte';
+	import CompareWorkstepsList from './CompareWorkstepsList.svelte';
 	import { FileProcessor } from '$lib/utils/fileProcessor.js';
-	import { logStore } from '$lib/stores/logStore.js';
-	
-	const dispatch = createEventDispatcher();
 	
 	let leftFile = null;
 	let rightFile = null;
@@ -15,6 +11,18 @@
 	let isLoadingRight = false;
 	let fileProcessor = new FileProcessor();
 	let syncScroll = true;
+	let scrollSyncEnabled = true;
+	let lastScrollSource = null;
+	let scrollTimeout = null;
+	let comparisonData = { left: [], right: [], diffs: [] };
+	let selectedIndex = -1;
+	
+	// Reactive statement to compute differences when data changes
+	$: if (leftData.length > 0 && rightData.length > 0) {
+		comparisonData = computeDifferences(leftData, rightData);
+	} else {
+		comparisonData = { left: leftData, right: rightData, diffs: [] };
+	}
 	
 	function clearComparison() {
 		leftFile = null;
@@ -57,32 +65,158 @@
 		}
 	}
 	
-	function handleSyncScroll(element) {
-		if (!syncScroll) return;
+	function handleSyncScroll(source) {
+		if (!syncScroll || !scrollSyncEnabled) return;
+		
+		// Prevent infinite loop by tracking scroll source
+		if (lastScrollSource === source) return;
 		
 		const leftViewer = document.querySelector('.left-viewer');
 		const rightViewer = document.querySelector('.right-viewer');
 		
 		if (!leftViewer || !rightViewer) return;
 		
-		if (element === 'left') {
-			rightViewer.scrollTop = leftViewer.scrollTop;
-		} else {
-			leftViewer.scrollTop = rightViewer.scrollTop;
+		// Temporarily disable sync to prevent loop
+		scrollSyncEnabled = false;
+		lastScrollSource = source;
+		
+		const sourceElement = source === 'left' ? leftViewer : rightViewer;
+		const targetElement = source === 'left' ? rightViewer : leftViewer;
+		
+		// Calculate relative scroll position
+		const scrollRatio = sourceElement.scrollTop / (sourceElement.scrollHeight - sourceElement.clientHeight);
+		const targetScrollTop = scrollRatio * (targetElement.scrollHeight - targetElement.clientHeight);
+		
+		// Apply scroll with smooth transition
+		targetElement.scrollTo({
+			top: isNaN(targetScrollTop) ? sourceElement.scrollTop : targetScrollTop,
+			behavior: 'auto'
+		});
+		
+		// Re-enable sync after a brief delay
+		if (scrollTimeout) clearTimeout(scrollTimeout);
+		scrollTimeout = setTimeout(() => {
+			scrollSyncEnabled = true;
+			lastScrollSource = null;
+		}, 50);
+	}
+	
+	function computeDifferences(left, right) {
+		const diffs = [];
+		const maxLength = Math.max(left.length, right.length);
+		
+		for (let i = 0; i < maxLength; i++) {
+			const leftEntry = left[i];
+			const rightEntry = right[i];
+			
+			if (!leftEntry && rightEntry) {
+				// Entry only in right
+				diffs.push({ index: i, type: 'added', side: 'right', entry: rightEntry });
+			} else if (leftEntry && !rightEntry) {
+				// Entry only in left
+				diffs.push({ index: i, type: 'removed', side: 'left', entry: leftEntry });
+			} else if (leftEntry && rightEntry) {
+				// Compare entries
+				const differences = compareEntries(leftEntry, rightEntry);
+				if (differences.length > 0) {
+					diffs.push({ 
+						index: i, 
+						type: 'modified', 
+						leftEntry, 
+						rightEntry, 
+						differences 
+					});
+				}
+			}
+		}
+		
+		return { left, right, diffs };
+	}
+	
+	function compareEntries(left, right) {
+		const differences = [];
+		
+		// Compare key fields
+		const fieldsToCompare = [
+			'currentAction',
+			'currentStep',
+			'screenName',
+			'visionscriptCommands',
+			'testName',
+			'executionStatus'
+		];
+		
+		fieldsToCompare.forEach(field => {
+			const leftValue = getNestedProperty(left, field);
+			const rightValue = getNestedProperty(right, field);
+			
+			if (JSON.stringify(leftValue) !== JSON.stringify(rightValue)) {
+				differences.push({
+					field,
+					leftValue,
+					rightValue
+				});
+			}
+		});
+		
+		return differences;
+	}
+	
+	function getNestedProperty(obj, path) {
+		return path.split('.').reduce((current, key) => current?.[key], obj);
+	}
+	
+	function handleEntrySelect(index) {
+		selectedIndex = index;
+		
+		// Scroll both panels to the selected entry
+		const leftViewer = document.querySelector('.left-viewer');
+		const rightViewer = document.querySelector('.right-viewer');
+		const entryElements = document.querySelectorAll('.workstep-entry');
+		
+		if (entryElements[index] && leftViewer && rightViewer) {
+			const scrollTop = entryElements[index].offsetTop - 100;
+			leftViewer.scrollTo({ top: scrollTop, behavior: 'smooth' });
+			rightViewer.scrollTo({ top: scrollTop, behavior: 'smooth' });
 		}
 	}
 </script>
 
 <div class="compare-container">
 	<div class="compare-controls">
-		<label class="sync-toggle">
-			<input type="checkbox" bind:checked={syncScroll}>
-			<span>Sync Scrolling</span>
-		</label>
-		{#if leftData.length > 0 || rightData.length > 0}
-			<button class="clear-btn" on:click={clearComparison}>
-				🗑️ Clear All
-			</button>
+		<div class="controls-left">
+			<label class="sync-toggle">
+				<input type="checkbox" bind:checked={syncScroll}>
+				<span>Sync Scrolling</span>
+			</label>
+			{#if leftData.length > 0 || rightData.length > 0}
+				<button class="clear-btn" on:click={clearComparison}>
+					🗑️ Clear All
+				</button>
+			{/if}
+		</div>
+		
+		{#if comparisonData.diffs.length > 0}
+			{@const addedCount = comparisonData.diffs.filter(d => d.type === 'added').length}
+			{@const removedCount = comparisonData.diffs.filter(d => d.type === 'removed').length}
+			{@const modifiedCount = comparisonData.diffs.filter(d => d.type === 'modified').length}
+			<div class="diff-summary">
+				{#if addedCount > 0}
+					<div class="diff-stat added">
+						<span>+{addedCount}</span>
+					</div>
+				{/if}
+				{#if removedCount > 0}
+					<div class="diff-stat removed">
+						<span>-{removedCount}</span>
+					</div>
+				{/if}
+				{#if modifiedCount > 0}
+					<div class="diff-stat modified">
+						<span>~{modifiedCount}</span>
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 	
@@ -111,7 +245,13 @@
 				</div>
 			{:else}
 				<div class="left-viewer" on:scroll={() => handleSyncScroll('left')}>
-					<WorkstepsList data={leftData} />
+					<CompareWorkstepsList 
+						data={comparisonData.left} 
+						diffs={comparisonData.diffs}
+						side="left"
+						{selectedIndex}
+						on:entryselect={(e) => handleEntrySelect(e.detail)}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -143,7 +283,13 @@
 				</div>
 			{:else}
 				<div class="right-viewer" on:scroll={() => handleSyncScroll('right')}>
-					<WorkstepsList data={rightData} />
+					<CompareWorkstepsList 
+						data={comparisonData.right} 
+						diffs={comparisonData.diffs}
+						side="right"
+						{selectedIndex}
+						on:entryselect={(e) => handleEntrySelect(e.detail)}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -162,12 +308,50 @@
 	.compare-controls {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		gap: 1rem;
 		margin-bottom: 20px;
 		padding: 12px;
 		background-color: #f8f9fa;
 		border-radius: 8px;
 		border: 1px solid #e0e0e0;
+	}
+	
+	.controls-left {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+	
+	.diff-summary {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		font-size: 0.9rem;
+	}
+	
+	.diff-stat {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 2px 6px;
+		border-radius: 12px;
+		font-weight: 500;
+	}
+	
+	.diff-stat.added {
+		background: #d4edda;
+		color: #155724;
+	}
+	
+	.diff-stat.removed {
+		background: #f8d7da;
+		color: #721c24;
+	}
+	
+	.diff-stat.modified {
+		background: #fff3cd;
+		color: #856404;
 	}
 	
 	.sync-toggle {
