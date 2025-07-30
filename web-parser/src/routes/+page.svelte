@@ -206,6 +206,12 @@
 				>
 					📝 Paste JSON
 				</button>
+				<button
+					class="input-btn {inputMode === 'compare' ? 'active' : ''}"
+					on:click={() => {inputMode = "compare"; currentView = "compare";}}
+				>
+					🔀 Compare
+				</button>
 			</div>
 
 			<div class="input-modes">
@@ -216,7 +222,7 @@
 							{isLoading}
 						/>
 					</div>
-				{:else}
+				{:else if inputMode === "paste"}
 					<div class="input-mode active">
 						<div class="paste-json-section">
 							<h3>Paste JSON Data</h3>
@@ -234,6 +240,12 @@
 							</button>
 						</div>
 					</div>
+				{:else if inputMode === "compare"}
+					<div class="input-mode active">
+						<div class="compare-landing">
+							<p>Switch to Compare view to compare test runs</p>
+						</div>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -241,12 +253,24 @@
 
 		<!-- Results Section -->
 		<div class="results-section">
-			{#if currentView === "compare"}
+			{#if currentView === "compare" && !showInputSection}
 				<div class="compare-section">
 					<h3>Compare Test Runs</h3>
 					<div class="results-container">
 						<div class="view-content compare-view">
 							<CompareView />
+						</div>
+					</div>
+				</div>
+			{:else if currentView === "compare" && showInputSection}
+				<div class="results-container">
+					<div class="view-content">
+						<div class="results-placeholder">
+							<p>🔀</p>
+							<p>Compare Test Runs</p>
+							<div class="compare-section">
+								<CompareView />
+							</div>
 						</div>
 					</div>
 				</div>
