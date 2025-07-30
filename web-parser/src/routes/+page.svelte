@@ -146,14 +146,6 @@
 					/>
 					<div class="view-controls">
 						<button
-							class="view-btn {currentView === 'timeline'
-								? 'active'
-								: ''}"
-							on:click={() => (currentView = "timeline")}
-						>
-							📊 Timeline
-						</button>
-						<button
 							class="view-btn {currentView === 'list'
 								? 'active'
 								: ''}"
@@ -182,6 +174,14 @@
 							on:click={() => (currentView = "compare")}
 						>
 							🔀 Compare
+						</button>
+						<button
+							class="view-btn {currentView === 'timeline'
+								? 'active'
+								: ''}"
+							on:click={() => (currentView = "timeline")}
+						>
+							📊 Timeline
 						</button>
 					</div>
 					<FilterPanel
