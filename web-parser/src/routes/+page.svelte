@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from "svelte";
 	import FileUpload from "$lib/components/FileUpload.svelte";
 	import LogViewer from "$lib/components/LogViewer.svelte";
 	import WorkstepsList from "$lib/components/WorkstepsList.svelte";
@@ -196,13 +195,13 @@
 			<div class="input-tabs">
 				<button
 					class="input-btn {inputMode === 'upload' ? 'active' : ''}"
-					on:click={() => {inputMode = "upload";}}
+					on:click={() => {inputMode = "upload"; currentView = "list";}}
 				>
 					📁 Upload File
 				</button>
 				<button
 					class="input-btn {inputMode === 'paste' ? 'active' : ''}"
-					on:click={() => {inputMode = "paste";}}
+					on:click={() => {inputMode = "paste"; currentView = "list";}}
 				>
 					📝 Paste JSON
 				</button>
